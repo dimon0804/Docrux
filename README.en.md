@@ -27,12 +27,18 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 Docker is the only requirement.
 
 ```sh
-git clone <repository url> paragraf
+git clone https://github.com/dimon0804/PARAGRAF.git paragraf
 cd paragraf
 docker compose up --build
 ```
 
 Open <http://localhost:8080>. The home page offers three sample documents, one per type.
+
+## Running in Google Colab
+
+No Docker at hand? Open the notebook: it installs the service on a free Colab machine, checks the open set and builds `results.json` for any set in the same format.
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/PARAGRAF/blob/main/notebooks/paragraf_colab.ipynb)
 
 ## Producing results.json
 
@@ -104,6 +110,8 @@ After a restart the type appears in the interface, in type detection and in answ
 ## Tools and models
 
 No external OCR or language model APIs are used. Everything runs on the CPU of an ordinary laptop.
+
+The theme switch and the word loader come from the open [Uiverse.io](https://uiverse.io) collection (by Galahhad and kennyotsu, MIT) and were adapted to the service. Interface colors are built on the brand green of Center-invest Bank.
 
 | Purpose | Tool |
 | --- | --- |

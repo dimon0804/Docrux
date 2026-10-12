@@ -27,7 +27,7 @@
 Нужен только Docker.
 
 ```sh
-git clone <адрес репозитория> paragraf
+git clone https://github.com/dimon0804/PARAGRAF.git paragraf
 cd paragraf
 docker compose up --build
 ```
@@ -39,6 +39,12 @@ docker compose up --build
 ```sh
 APT_MIRROR=mirror.yandex.ru docker compose up --build
 ```
+
+## Запуск в Google Colab
+
+Если Docker под рукой нет, откройте ноутбук: он ставит сервис на бесплатной машине Colab, проверяет открытый набор и собирает `results.json` для любого набора в том же формате.
+
+[![Открыть в Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/PARAGRAF/blob/main/notebooks/paragraf_colab.ipynb)
 
 ## Как получить results.json
 
@@ -153,6 +159,8 @@ fields:
 
 Одна страница обрабатывается примерно за секунду.
 
+Переключатель темы и загрузчик со сменой слов взяты из открытой коллекции [Uiverse.io](https://uiverse.io) (авторы Galahhad и kennyotsu, лицензия MIT) и подогнаны под оформление сервиса. Цвета интерфейса построены на фирменном зелёном банка «Центр-инвест».
+
 ## Безопасность и приватность
 
 - Файл обрабатывается в памяти и не сохраняется. Базы данных и учётных записей нет.
@@ -191,6 +199,7 @@ config/           типы документов и Положение
 frontend/         интерфейс студента
 data/open/        открытый набор организаторов и скрипт проверки
 tools/            генератор документов и порча снимков для замеров
+notebooks/        ноутбук для Google Colab
 docs/case/        презентация кейса
 ```
 
