@@ -38,6 +38,7 @@ export type Analysis = {
   fields: FieldValue[];
   validation: Validation;
   quality: Record<string, number | string | boolean>;
+  page_breaks: number[];
   width: number;
   height: number;
 };

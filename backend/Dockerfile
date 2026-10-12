@@ -9,10 +9,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
+# Установка повторяется до пяти раз: на медленной сети отдельные пакеты могут не скачаться с первой попытки.
 RUN sed -i "s|deb.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list.d/debian.sources \
-    && apt-get -o Acquire::Retries=5 update \
-    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-        tesseract-ocr tesseract-ocr-rus libglib2.0-0 \
+    && for attempt in 1 2 3 4 5; do \
+         apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 update \
+         && apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 install -y --no-install-recommends \
+              tesseract-ocr tesseract-ocr-rus libglib2.0-0 \
+         && break; \
+         echo "apt: attempt $attempt failed, retrying"; sleep 5; \
+       done \
+    && tesseract --list-langs | grep -q rus \
     && rm -rf /var/lib/apt/lists/*
 
 # Точная модель русского языка. Версия закреплена коммитом и контрольной суммой.

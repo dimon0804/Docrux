@@ -93,6 +93,8 @@ class Analysis(BaseModel):
     fields: list[FieldValue]
     validation: Validation
     quality: dict[str, float | str | bool] = {}
+    page_breaks: list[float] = []
+    """Границы страниц на склеенном снимке, в долях высоты."""
     width: int
     height: int
 

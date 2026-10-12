@@ -50,12 +50,9 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    user: "65532:65532"
-    # Для домена с HTTPS замените tmpfs у /data на том, чтобы сертификаты переживали перезапуск.
+    # Для домена с HTTPS подключите том к /tmp/caddy/data, чтобы сертификаты переживали перезапуск.
     tmpfs:
-      - /tmp:size=16m
-      - /data:size=16m,uid=65532,gid=65532
-      - /config:size=8m,uid=65532,gid=65532
+      - /tmp:size=32m,mode=1777
     mem_limit: 256m
     networks: [internal, public]
 

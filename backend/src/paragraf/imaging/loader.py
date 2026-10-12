@@ -15,6 +15,7 @@ from paragraf.models import Box, Line, Word
 MAX_BYTES = 15 * 1024 * 1024
 MAX_PIXELS = 50_000_000
 PDF_DPI = 200
+MAX_PAGES = 10
 
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 
@@ -25,13 +26,22 @@ class UnsupportedFile(ValueError):
 
 @dataclass
 class Page:
-    image: np.ndarray
-    """Страница в BGR."""
+    """Загруженный документ: одна страница у фото, одна или несколько у PDF."""
+
+    images: list[np.ndarray]
+    """Страницы в BGR."""
     kind: str
     """jpeg, png или pdf."""
-    embedded_lines: list[Line] = field(default_factory=list)
-    """Текстовый слой PDF, если он есть."""
-    pages: int = 1
+    embedded: list[list[Line]] = field(default_factory=list)
+    """Текстовый слой каждой страницы PDF, если он есть."""
+
+    @property
+    def pages(self) -> int:
+        return len(self.images)
+
+    @property
+    def has_text_layer(self) -> bool:
+        return len(self.embedded) == len(self.images) and any(self.embedded)
 
 
 def sniff(data: bytes) -> str:
@@ -69,7 +79,7 @@ def _load_image(data: bytes, kind: str) -> Page:
     image = cv2.cvtColor(np.asarray(picture), cv2.COLOR_RGB2BGR)
     if min(image.shape[:2]) < 200:
         raise UnsupportedFile("Изображение слишком маленькое, текст не прочитать.")
-    return Page(image=image, kind=kind)
+    return Page(images=[image], kind=kind)
 
 
 def _load_pdf(data: bytes) -> Page:
@@ -82,18 +92,24 @@ def _load_pdf(data: bytes) -> Page:
             raise UnsupportedFile("PDF защищён паролем.")
         if document.page_count < 1:
             raise UnsupportedFile("В PDF нет страниц.")
-        page = document[0]
-        rect = page.rect
+        if document.page_count > MAX_PAGES:
+            raise UnsupportedFile(f"В PDF больше {MAX_PAGES} страниц.")
         zoom = PDF_DPI / 72
-        if rect.width * rect.height * zoom * zoom > MAX_PIXELS:
-            raise UnsupportedFile("Страница PDF слишком большая.")
-        pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
-        image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(
-            pixmap.height, pixmap.width, pixmap.n
-        )
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        lines = _embedded_lines(page, rect.width, rect.height)
-        return Page(image=image, kind="pdf", embedded_lines=lines, pages=document.page_count)
+        images: list[np.ndarray] = []
+        embedded: list[list[Line]] = []
+        total = 0.0
+        for page in document:
+            rect = page.rect
+            total += rect.width * rect.height * zoom * zoom
+            if total > MAX_PIXELS * 2:
+                raise UnsupportedFile("Страницы PDF слишком большие.")
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+            image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(
+                pixmap.height, pixmap.width, pixmap.n
+            )
+            images.append(cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+            embedded.append(_embedded_lines(page, rect.width, rect.height))
+        return Page(images=images, kind="pdf", embedded=embedded)
 
 
 def _embedded_lines(page: fitz.Page, width: float, height: float) -> list[Line]:

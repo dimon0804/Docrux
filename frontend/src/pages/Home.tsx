@@ -84,6 +84,7 @@ function Workspace() {
               focus={state.focus}
               width={state.analysis.width}
               height={state.analysis.height}
+              pageBreaks={state.analysis.page_breaks}
               onSelect={select}
             />
           </div>

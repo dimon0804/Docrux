@@ -85,7 +85,7 @@ Robustness was measured on the same 90 documents damaged by `tools/degrade.py`:
 
 ## How it works
 
-1. **Intake.** The format is detected from the file content, not from its extension. A PDF becomes an image of its first page.
+1. **Intake.** The format is detected from the file content, not from its extension. PDF pages become images.
 2. **Preparation.** The service finds the sheet on the desk and fixes perspective, estimates the tilt, evens out the light and enlarges small photos. When the sheet contour is doubtful, the picture is left uncropped.
 3. **Recognition.** Tesseract 5 with the accurate Russian model returns words and their coordinates.
 4. **Card.** Lines shaped like "Label: value" are matched to fields by fuzzy label comparison. Dates become `YYYY-MM-DD`; look-alike letters and digits in codes are repaired.
@@ -159,7 +159,7 @@ Local recognition needs Tesseract with the Russian language. Tests read the PDF 
 ## Limitations
 
 - The service targets printed documents with labelled fields. Handwriting in fields is not recognized.
-- Only the first page of a PDF is read.
+- Up to 10 pages of a PDF are read. Pages are joined into one picture and fields are searched on all of them.
 - The presence of a signature and a seal is checked, not their authenticity.
 - The check is preliminary. The final decision belongs to a dean's office employee, clause 1.3 of the regulations.
 

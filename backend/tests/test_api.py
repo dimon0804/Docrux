@@ -205,3 +205,48 @@ def test_rate_limiter_window_slides():
     assert not allowed and retry_after > 0
     assert limiter.allow("b", now=2)[0]
     assert limiter.allow("a", now=62)[0]
+
+
+def _two_page_pdf(open_dir: Path, cover_first: bool = True) -> bytes:
+    import pymupdf
+
+    merged = pymupdf.open()
+    cover = merged.new_page()
+    cover.insert_text((72, 100), "Сопроводительный лист", fontsize=14)
+    with pymupdf.open(open_dir / "documents" / "open-003.pdf") as source:
+        merged.insert_pdf(source)
+    if not cover_first:
+        merged.move_page(0, 1)
+    return merged.tobytes()
+
+
+def test_multi_page_pdf_is_read_completely(client: TestClient, open_dir: Path):
+    response = client.post(
+        "/api/analyze",
+        files={"file": ("two.pdf", _two_page_pdf(open_dir), "application/pdf")},
+    )
+    assert response.status_code == 200
+    analysis = response.json()["analysis"]
+    assert analysis["document_type"] == "study_certificate"
+    assert analysis["quality"]["pages"] == 2
+    assert len(analysis["page_breaks"]) == 1
+    assert analysis["validation"]["missing_fields"] == ["signature_present"]
+    name = next(field for field in analysis["fields"] if field["key"] == "student_name")
+    assert name["value"] == "Жуков Андрей Дмитриевич"
+    # Документ лежит на второй странице, значит и рамка поля ниже границы страниц.
+    assert name["box"]["y"] > analysis["page_breaks"][0]
+    seal = next(field for field in analysis["fields"] if field["key"] == "seal_present")
+    assert seal["value"] is True and seal["box"]["y"] > analysis["page_breaks"][0]
+
+
+def test_pdf_with_too_many_pages_is_rejected(client: TestClient):
+    import pymupdf
+
+    document = pymupdf.open()
+    for _ in range(11):
+        document.new_page()
+    response = client.post(
+        "/api/analyze", files={"file": ("long.pdf", document.tobytes(), "application/pdf")}
+    )
+    assert response.status_code == 415
+    assert "страниц" in response.json()["detail"]

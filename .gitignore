@@ -18,3 +18,4 @@ skills-lock.json
 data/synth*/
 npm-install.log
 vite-dev.log
+.models/

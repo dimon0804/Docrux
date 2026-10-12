@@ -17,6 +17,7 @@ const analysis: Analysis = {
   width: 1000,
   height: 1400,
   quality: {},
+  page_breaks: [],
   validation: { status: "missing_fields", missing_fields: ["issue_date"], sources: ["rule:3.1"] },
   fields: [
     {

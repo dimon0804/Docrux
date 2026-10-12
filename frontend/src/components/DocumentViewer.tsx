@@ -6,13 +6,22 @@ type Props = {
   focus: string[];
   width: number;
   height: number;
+  pageBreaks?: number[];
   onSelect: (key: string) => void;
 };
 
 const percent = (value: number) => `${(value * 100).toFixed(3)}%`;
 
 /** Выровненный снимок документа с рамками найденных полей. */
-export function DocumentViewer({ image, fields, focus, width, height, onSelect }: Props) {
+export function DocumentViewer({
+  image,
+  fields,
+  focus,
+  width,
+  height,
+  pageBreaks = [],
+  onSelect,
+}: Props) {
   const located = fields.filter((field) => field.box);
   return (
     <figure className="card overflow-hidden p-2 sm:p-3">
@@ -26,6 +35,14 @@ export function DocumentViewer({ image, fields, focus, width, height, onSelect }
           className="block size-full select-none object-contain"
           draggable={false}
         />
+        {pageBreaks.map((position) => (
+          <span
+            key={position}
+            aria-hidden="true"
+            className="absolute inset-x-0 h-0 border-t-2 border-dashed border-[#c9ccd6]"
+            style={{ top: percent(position) }}
+          />
+        ))}
         {located.map((field) => {
           const box = field.box!;
           const active = focus.includes(field.key);
@@ -54,6 +71,7 @@ export function DocumentViewer({ image, fields, focus, width, height, onSelect }
         })}
       </div>
       <figcaption className="px-2 pb-1 pt-3 text-[13px] leading-relaxed text-muted">
+        {pageBreaks.length > 0 ? `Страниц в документе: ${pageBreaks.length + 1}. ` : ""}
         Снимок выровнен перед чтением. Нажмите на поле в карточке, чтобы увидеть, откуда взято
         значение.
       </figcaption>

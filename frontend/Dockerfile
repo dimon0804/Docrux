@@ -14,6 +14,10 @@ LABEL org.opencontainers.image.title="Параграф Web" \
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /web/dist /srv
 RUN caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+# Caddy работает от непривилегированного пользователя и пишет служебные файлы только в /tmp.
+ENV XDG_CONFIG_HOME=/tmp/caddy/config \
+    XDG_DATA_HOME=/tmp/caddy/data
+USER 65532:65532
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
     CMD ["wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
