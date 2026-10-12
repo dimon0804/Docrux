@@ -116,6 +116,8 @@ class DocTypeRegistry:
                 raise ValueError(f"{path.name}: {exc}") from exc
         if not types:
             raise FileNotFoundError(f"в {directory} нет описаний типов документов")
+        # Порядок как в Положении: сначала тип, о котором говорит более ранний раздел.
+        types.sort(key=lambda doc_type: _rule_order(doc_type.rules[0]))
         ids = [doc_type.id for doc_type in types]
         if len(ids) != len(set(ids)):
             raise ValueError("идентификаторы типов документов повторяются")

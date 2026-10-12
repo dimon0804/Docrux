@@ -67,7 +67,8 @@ def find_seal(color: np.ndarray, mask: np.ndarray | None = None) -> Mark:
     mask = ink_mask(color) if mask is None else mask
     height, width = mask.shape
     joined = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-    contours, _ = cv2.findContours(joined, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # Внешний контур может оказаться рамкой по краю снимка, поэтому смотрим все контуры.
+    contours, _ = cv2.findContours(joined, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
     best = Mark(False)
     for contour in contours:
@@ -127,9 +128,13 @@ def find_signature(
 
     work = _erase_text(mask, lines)
     if seal is not None:
-        sx0, sy0 = int(seal.x * width), int(seal.y * height)
-        sx1, sy1 = int((seal.x + seal.w) * width), int((seal.y + seal.h) * height)
-        work[max(0, sy0 - 4) : sy1 + 4, max(0, sx0 - 4) : sx1 + 4] = 0
+        pad = int(0.12 * max(seal.w * width, seal.h * height))
+        sx0, sy0 = int(seal.x * width) - pad, int(seal.y * height) - pad
+        sx1, sy1 = int((seal.x + seal.w) * width) + pad, int((seal.y + seal.h) * height) + pad
+        work[max(0, sy0) : sy1, max(0, sx0) : sx1] = 0
+        # Печать стоит правее подписи: дальше её левого края росчерк не ищем.
+        if anchor is not None and sx0 > x0 + 4 * text_height:
+            x1 = min(x1, sx0)
     zone = work[y0:y1, x0:x1]
 
     rule_len = max(25, int(4 * text_height))

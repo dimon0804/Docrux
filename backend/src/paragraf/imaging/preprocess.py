@@ -178,9 +178,12 @@ def _crop_page(image: np.ndarray) -> np.ndarray | None:
         return None
     target = np.array([[0, 0], [out_w - 1, 0], [out_w - 1, out_h - 1], [0, out_h - 1]], np.float32)
     matrix = cv2.getPerspectiveTransform(corners, target)
-    return cv2.warpPerspective(
+    warped = cv2.warpPerspective(
         image, matrix, (out_w, out_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
     )
+    # По краю почти всегда остаётся полоска стола: срезаем её.
+    trim_x, trim_y = max(2, int(out_w * 0.008)), max(2, int(out_h * 0.008))
+    return warped[trim_y:-trim_y, trim_x:-trim_x]
 
 
 def _relative_ink(gray: np.ndarray) -> np.ndarray:
