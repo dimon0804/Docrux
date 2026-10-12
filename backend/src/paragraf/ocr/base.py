@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from itertools import pairwise
 from typing import Protocol
 
 import numpy as np
@@ -56,7 +57,7 @@ def _split_columns(row: list[Word]) -> list[list[Word]]:
         return [row]
     height = sorted(word.box.h for word in row)[len(row) // 2]
     chunks, current = [], [row[0]]
-    for previous, word in zip(row, row[1:], strict=False):
+    for previous, word in pairwise(row):
         gap = word.box.x - (previous.box.x + previous.box.w)
         if gap > max(0.06, 4.0 * height * 0.7):
             chunks.append(current)

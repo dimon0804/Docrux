@@ -6,8 +6,8 @@ import io
 from dataclasses import dataclass, field
 
 import cv2
-import pymupdf as fitz
 import numpy as np
+import pymupdf as fitz
 from PIL import Image, ImageOps
 
 from paragraf.models import Box, Line, Word

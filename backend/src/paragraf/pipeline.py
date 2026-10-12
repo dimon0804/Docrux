@@ -62,14 +62,18 @@ class Pipeline:
         """Текст страницы: из текстового слоя PDF или из OCR."""
         height, width = prepared.gray.shape[:2]
         if self.settings.pdf_text_layer == "prefer" and page.embedded_lines:
-            return OcrResult(engine="pdf-text", lines=page.embedded_lines, width=width, height=height)
+            return OcrResult(
+                engine="pdf-text", lines=page.embedded_lines, width=width, height=height
+            )
         return self.engine.recognize(prepared.gray)
 
     def analyze(self, data: bytes, type_id: str | None = None) -> Processed:
         page = load_page(data)
         if self.settings.pdf_text_layer == "prefer" and page.embedded_lines:
             # Рамки текстового слоя привязаны к исходной странице: геометрию не трогаем.
-            prepared = Prepared(color=page.image, gray=_gray(page.image), quality={"pdf_text": True})
+            prepared = Prepared(
+                color=page.image, gray=_gray(page.image), quality={"pdf_text": True}
+            )
         else:
             prepared = prepare(page.image)
         ocr = self.read(page, prepared)
@@ -129,22 +133,33 @@ class Pipeline:
                     mark = marks.find_signature(
                         color, lines, anchor, seal.box if seal.present else None, mask
                     )
-                fields.append(FieldValue(
-                    key=spec.key, label=spec.label, type=spec.type, value=mark.present,
-                    found=mark.present, box=mark.box if mark.present else None,
-                    confidence=round(mark.score, 3), rule=spec.rule,
-                ))
+                fields.append(
+                    FieldValue(
+                        key=spec.key,
+                        label=spec.label,
+                        type=spec.type,
+                        value=mark.present,
+                        found=mark.present,
+                        box=mark.box if mark.present else None,
+                        confidence=round(mark.score, 3),
+                        rule=spec.rule,
+                    )
+                )
                 continue
             value = normalize(spec, hit.raw) if hit else None
-            fields.append(FieldValue(
-                key=spec.key, label=spec.label, type=spec.type,
-                value=value if value is not None else NOT_FOUND,
-                found=value is not None,
-                raw=hit.raw if hit else None,
-                box=hit.box if hit and value is not None else None,
-                confidence=round(hit.confidence, 3) if hit else None,
-                rule=spec.rule,
-            ))
+            fields.append(
+                FieldValue(
+                    key=spec.key,
+                    label=spec.label,
+                    type=spec.type,
+                    value=value if value is not None else NOT_FOUND,
+                    found=value is not None,
+                    raw=hit.raw if hit else None,
+                    box=hit.box if hit and value is not None else None,
+                    confidence=round(hit.confidence, 3) if hit else None,
+                    rule=spec.rule,
+                )
+            )
         return fields
 
     def ask(self, analysis: Analysis, question: str) -> Answer:

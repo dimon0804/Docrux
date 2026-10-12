@@ -54,20 +54,24 @@ def run_batch(
         answers = []
         for item in asked.get(document_id, []):
             answer = pipeline.ask(analysis, item["question"])
-            answers.append({
-                "question_id": item["question_id"],
-                "answerable": answer.answerable,
-                "value": answer.value,
-                "answer": answer.answer,
-                "sources": answer.sources,
-            })
-        documents.append({
-            "document_id": document_id,
-            "document_type": analysis.document_type,
-            "fields": analysis.card(),
-            "validation": analysis.validation.model_dump(),
-            "answers": answers,
-        })
+            answers.append(
+                {
+                    "question_id": item["question_id"],
+                    "answerable": answer.answerable,
+                    "value": answer.value,
+                    "answer": answer.answer,
+                    "sources": answer.sources,
+                }
+            )
+        documents.append(
+            {
+                "document_id": document_id,
+                "document_type": analysis.document_type,
+                "fields": analysis.card(),
+                "validation": analysis.validation.model_dump(),
+                "answers": answers,
+            }
+        )
         if progress:
             progress(document_id)
     return {"version": RESULTS_VERSION, "documents": documents}

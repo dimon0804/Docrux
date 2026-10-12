@@ -44,8 +44,12 @@ class TesseractEngine:
             if not re.search(r"[0-9A-Za-zА-Яа-яЁё_№]", text):
                 continue
             box = make_box(
-                data["left"][index], data["top"][index],
-                data["width"][index], data["height"][index], width, height,
+                data["left"][index],
+                data["top"][index],
+                data["width"][index],
+                data["height"][index],
+                width,
+                height,
             )
             words.append(Word(text=text, box=box, confidence=confidence / 100))
         return group_lines(words, self.name, width, height)

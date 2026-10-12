@@ -58,7 +58,7 @@ def _split(line: Line) -> tuple[str, str, int] | None:
         if ":" in word.text:
             head, _, tail = word.text.partition(":")
             label = " ".join([*(w.text for w in words[:index]), head])
-            value = " ".join([tail, *(w.text for w in words[index + 1:])]).strip()
+            value = " ".join([tail, *(w.text for w in words[index + 1 :])]).strip()
             return label, value, index + 1
     if ":" in line.text:
         label, _, value = line.text.partition(":")
@@ -118,7 +118,7 @@ def locate(doc_type: DocType, lines: list[Line]) -> dict[str, Found]:
 
     found: dict[str, Found] = {}
     used_lines: set[int] = set()
-    for score, index, target, value, used in sorted(candidates, key=lambda item: -item[0]):
+    for _, index, target, value, used in sorted(candidates, key=lambda item: -item[0]):
         if index in used_lines or target.key in found:
             continue
         line = lines[index]
@@ -135,11 +135,12 @@ def _with_continuation(
     line = lines[index]
     if textnorm.is_blank(value):
         # Значение может стоять правее в той же строке как отдельный блок.
-        for other in lines[index + 1: index + 3]:
+        for other in lines[index + 1 : index + 3]:
             same_row = abs((other.box.y + other.box.h / 2) - (line.box.y + line.box.h / 2))
-            if same_row < line.box.h * 0.6 and other.box.x > line.box.x + line.box.w:
-                if ":" not in other.text and not textnorm.is_blank(other.text):
-                    return other.text, other.box
+            to_the_right = other.box.x > line.box.x + line.box.w
+            filled = ":" not in other.text and not textnorm.is_blank(other.text)
+            if same_row < line.box.h * 0.6 and to_the_right and filled:
+                return other.text, other.box
         return value, box
     if index + 1 >= len(lines):
         return value, box

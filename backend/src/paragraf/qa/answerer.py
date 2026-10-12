@@ -21,8 +21,20 @@ NO_ANSWER = (
 )
 COMPLETENESS_QUESTION = "Содержит ли документ все обязательные сведения?"
 
-_MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа",
-           "сентября", "октября", "ноября", "декабря"]
+_MONTHS = [
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря",
+]
 
 
 def _rule_list(rules: list[str]) -> str:
@@ -64,8 +76,12 @@ class Answerer:
         if intent.kind == "field" and intent.field is not None:
             return self._field(analysis, question, intent.field.key)
         return Answer(
-            question=question, intent="unknown", answerable=False, value=None,
-            answer=NO_ANSWER, sources=[],
+            question=question,
+            intent="unknown",
+            answerable=False,
+            value=None,
+            answer=NO_ANSWER,
+            sources=[],
         )
 
     def completeness(self, doc_type: DocType, analysis: Analysis, question: str = "") -> Answer:
@@ -75,8 +91,8 @@ class Answerer:
             text = (
                 f"Документ содержит все обязательные сведения по пунктам {_rule_list(rules)} "
                 "Положения. Окончательное решение примет сотрудник деканата."
-                if len(rules) > 1 else
-                f"Документ содержит все обязательные сведения по пункту {_rule_list(rules)} "
+                if len(rules) > 1
+                else f"Документ содержит все обязательные сведения по пункту {_rule_list(rules)} "
                 "Положения. Окончательное решение примет сотрудник деканата."
             )
         else:
@@ -106,29 +122,42 @@ class Answerer:
             present = bool(field.value)
             text = (
                 f"{field.label}: отметка на документе есть."
-                if present else
-                f"{field.label}: отметка на документе не найдена. Она обязательна по "
+                if present
+                else f"{field.label}: отметка на документе не найдена. Она обязательна по "
                 f"пункту {field.rule} Положения."
             )
             return Answer(
-                question=question, intent="field", answerable=True,
-                value="есть" if present else "нет", answer=text,
-                sources=[source], highlight=[key],
+                question=question,
+                intent="field",
+                answerable=True,
+                value="есть" if present else "нет",
+                answer=text,
+                sources=[source],
+                highlight=[key],
             )
         if not field.found or field.value == NOT_FOUND:
             return Answer(
-                question=question, intent="field", answerable=False, value=None,
+                question=question,
+                intent="field",
+                answerable=False,
+                value=None,
                 answer=(
                     f"Поле «{field.label}» в документе не заполнено, поэтому ответить нельзя. "
                     f"Оно обязательно по пункту {field.rule} Положения."
                 ),
-                sources=[], highlight=[key],
+                sources=[],
+                highlight=[key],
             )
         value = str(field.value)
         shown = f"{human_date(value)} ({value})" if field.type == "date" else value
         return Answer(
-            question=question, intent="field", answerable=True, value=value,
-            answer=f"{field.label}: {shown}.", sources=[source], highlight=[key],
+            question=question,
+            intent="field",
+            answerable=True,
+            value=value,
+            answer=f"{field.label}: {shown}.",
+            sources=[source],
+            highlight=[key],
         )
 
 

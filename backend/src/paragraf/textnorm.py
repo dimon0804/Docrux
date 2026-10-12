@@ -35,17 +35,35 @@ _LAT_TO_CYR = str.maketrans(
     "АВСЕНКМОРТХУасеорху",
 )
 # Буквы, которые OCR ставит на место цифр.
-_LETTER_TO_DIGIT = str.maketrans({"О": "0", "о": "0", "O": "0", "o": "0", "З": "3", "з": "3",
-                                  "l": "1", "I": "1", "|": "1", "Б": "6", "б": "6", "S": "5"})
+_LETTER_TO_DIGIT = str.maketrans(
+    {
+        "О": "0",
+        "о": "0",
+        "O": "0",
+        "o": "0",
+        "З": "3",
+        "з": "3",
+        "l": "1",
+        "I": "1",
+        "|": "1",
+        "Б": "6",
+        "б": "6",
+        "S": "5",
+    }
+)
 _DIGIT_TO_LETTER = str.maketrans({"0": "О", "3": "З", "6": "Б"})
 
 _PLACEHOLDER = re.compile(r"^[\s_\-–—.·…]*$")
-_QUOTES = "«»“”„\""
+_QUOTES = '«»“”„"'
+
+
+_HYPHENS = dict.fromkeys(map(ord, "­‐‑‒−"), "-")
 
 
 def squash(text: str) -> str:
-    """Схлопывает пробелы и приводит Unicode к NFC."""
-    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text)).strip()
+    """Схлопывает пробелы, приводит Unicode к NFC и разные дефисы к обычному."""
+    text = unicodedata.normalize("NFC", text).translate(_HYPHENS)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def compare_key(text: str) -> str:
@@ -156,8 +174,20 @@ def _month(word: str) -> int | None:
     # OCR мог ошибиться в одной букве: берём ближайшее название месяца.
     from rapidfuzz import fuzz, process
 
-    names = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа",
-             "сентября", "октября", "ноября", "декабря"]
+    names = [
+        "января",
+        "февраля",
+        "марта",
+        "апреля",
+        "мая",
+        "июня",
+        "июля",
+        "августа",
+        "сентября",
+        "октября",
+        "ноября",
+        "декабря",
+    ]
     best = process.extractOne(word, names, scorer=fuzz.ratio)
     if best and best[1] >= 75:
         return names.index(best[0]) + 1
@@ -171,34 +201,50 @@ def _build(year: int, month: int, day: int) -> str | None:
         return None
 
 
+_ROMAN = {"i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6}
+
+
 def parse_integer(raw: str) -> str | None:
     """Целое число строкой: «3», «3 курс», «III»."""
     text = squash(raw)
+    if text.casefold() in _ROMAN:
+        return str(_ROMAN[text.casefold()])
     match = re.search(r"\d+", _digits(text) if len(text) <= 3 else text)
-    if match:
-        return str(int(match[0]))
-    roman = {"i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6}
-    return str(roman[text.casefold()]) if text.casefold() in roman else None
+    return str(int(match[0])) if match else None
+
+
+_AMBIGUOUS = {"О": "0", "З": "3", "Б": "6", "0": "О", "3": "З", "6": "Б"}
 
 
 def clean_code(raw: str) -> str:
     """Номера и шифры групп: «ОБ-1001», «ИВТ-23-4».
 
-    Внутри одного кода буквы приводятся к кириллице, а в цифровых частях
-    исправляются буквы, похожие на цифры.
+    Латинские двойники заменяются кириллицей. Знаки, которые OCR путает между
+    буквой и цифрой (О и 0, З и 3, Б и 6), приводятся к виду соседей: внутри
+    числа это цифра, внутри буквенного шифра буква.
     """
     text = squash(raw).lstrip("№# ").replace("—", "-").replace("–", "-")
     text = re.sub(r"\s*-\s*", "-", text)
-    parts = []
-    for part in text.split("-"):
-        digits = sum(char.isdigit() for char in part)
-        letters = sum(char.isalpha() for char in part)
-        if digits > letters:
-            part = _digits(part)
-        elif letters > digits:
-            part = to_cyrillic(part).translate(_DIGIT_TO_LETTER).upper()
-        parts.append(part)
-    return "-".join(parts)
+    return "-".join(_fix_run(to_cyrillic(part).upper()) for part in text.split("-"))
+
+
+def _fix_run(part: str) -> str:
+    def certain(char: str) -> str | None:
+        if char in _AMBIGUOUS:
+            return None
+        return "digit" if char.isdigit() else "letter" if char.isalpha() else None
+
+    kinds = [certain(char) for char in part]
+    out = list(part)
+    for index, char in enumerate(part):
+        if kinds[index] is not None or char not in _AMBIGUOUS:
+            continue
+        left = next((kind for kind in reversed(kinds[:index]) if kind), None)
+        right = next((kind for kind in kinds[index + 1 :] if kind), None)
+        wanted = left or right
+        if (wanted == "digit" and char.isalpha()) or (wanted == "letter" and char.isdigit()):
+            out[index] = _AMBIGUOUS[char]
+    return "".join(out)
 
 
 def clean_person(raw: str) -> str:

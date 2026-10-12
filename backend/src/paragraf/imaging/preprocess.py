@@ -103,8 +103,12 @@ def _rotate_bound(image: np.ndarray, angle: float, border: int | tuple = 0) -> n
     matrix[0, 2] += new_w / 2 - width / 2
     matrix[1, 2] += new_h / 2 - height / 2
     return cv2.warpAffine(
-        image, matrix, (new_w, new_h), flags=cv2.INTER_LINEAR,
-        borderMode=cv2.BORDER_CONSTANT, borderValue=border,
+        image,
+        matrix,
+        (new_w, new_h),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=border,
     )
 
 
@@ -168,8 +172,9 @@ def _crop_page(image: np.ndarray) -> np.ndarray | None:
         return None
     target = np.array([[0, 0], [out_w - 1, 0], [out_w - 1, out_h - 1], [0, out_h - 1]], np.float32)
     matrix = cv2.getPerspectiveTransform(corners, target)
-    return cv2.warpPerspective(image, matrix, (out_w, out_h), flags=cv2.INTER_CUBIC,
-                               borderMode=cv2.BORDER_REPLICATE)
+    return cv2.warpPerspective(
+        image, matrix, (out_w, out_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
+    )
 
 
 def _order_corners(points: np.ndarray) -> np.ndarray:
@@ -177,7 +182,11 @@ def _order_corners(points: np.ndarray) -> np.ndarray:
     total = points.sum(axis=1)
     diff = np.diff(points, axis=1).ravel()
     return np.array(
-        [points[np.argmin(total)], points[np.argmin(diff)],
-         points[np.argmax(total)], points[np.argmax(diff)]],
+        [
+            points[np.argmin(total)],
+            points[np.argmin(diff)],
+            points[np.argmax(total)],
+            points[np.argmax(diff)],
+        ],
         dtype=np.float32,
     )

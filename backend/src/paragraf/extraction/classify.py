@@ -22,9 +22,7 @@ def score_type(doc_type: DocType, lines: list[Line]) -> float:
         title = max(title, fuzz.partial_ratio(wanted_key, text) / 100 * 0.9)
 
     keywords = doc_type.detect.keywords
-    hits = sum(
-        fuzz.partial_ratio(textnorm.match_key(word), text) >= 88 for word in keywords
-    )
+    hits = sum(fuzz.partial_ratio(textnorm.match_key(word), text) >= 88 for word in keywords)
     keyword_share = hits / len(keywords) if keywords else 0.0
 
     located = locate(doc_type, lines)
@@ -40,8 +38,10 @@ def detect_type(registry: DocTypeRegistry, lines: list[Line]) -> tuple[DocType |
     Если ни один тип не набрал достаточной оценки, возвращается None: в этом
     случае тип должен выбрать пользователь.
     """
-    ranked = sorted(((score_type(doc_type, lines), doc_type) for doc_type in registry),
-                    key=lambda item: -item[0])
+    ranked = sorted(
+        ((score_type(doc_type, lines), doc_type) for doc_type in registry),
+        key=lambda item: -item[0],
+    )
     if not ranked:
         return None, 0.0
     best_score, best = ranked[0]

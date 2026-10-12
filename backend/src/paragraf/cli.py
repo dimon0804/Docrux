@@ -34,7 +34,10 @@ def batch(
     if questions is None and (manifest.parent / "questions.json").exists():
         questions = manifest.parent / "questions.json"
     result = run_batch(
-        _pipeline(text_layer), manifest, questions, source,
+        _pipeline(text_layer),
+        manifest,
+        questions,
+        source,
         progress=lambda name: typer.echo(f"  {name}", err=True),
     )
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -57,7 +60,9 @@ def read(
     typer.echo(pipeline.check(analysis).answer)
     if question:
         answer = pipeline.ask(analysis, question)
-        typer.echo(f"\n{question}\n{answer.answer}\nИсточники: {', '.join(answer.sources) or 'нет'}")
+        typer.echo(
+            f"\n{question}\n{answer.answer}\nИсточники: {', '.join(answer.sources) or 'нет'}"
+        )
 
 
 @app.command()

@@ -129,7 +129,7 @@ def find_signature(
     if seal is not None:
         sx0, sy0 = int(seal.x * width), int(seal.y * height)
         sx1, sy1 = int((seal.x + seal.w) * width), int((seal.y + seal.h) * height)
-        work[max(0, sy0 - 4):sy1 + 4, max(0, sx0 - 4):sx1 + 4] = 0
+        work[max(0, sy0 - 4) : sy1 + 4, max(0, sx0 - 4) : sx1 + 4] = 0
     zone = work[y0:y1, x0:x1]
 
     rule_len = max(25, int(4 * text_height))
