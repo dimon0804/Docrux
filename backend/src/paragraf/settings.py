@@ -27,10 +27,12 @@ class Settings(BaseSettings):
     tessdata: str | None = None
 
     pdf_text_layer: Literal["ignore", "prefer"] = "ignore"
-    """ignore — PDF всегда распознаётся как картинка; prefer — берётся текстовый слой, если он есть."""
+    """ignore: PDF распознаётся как картинка. prefer: берётся текстовый слой, если он есть."""
 
     max_upload_mb: int = 15
     rate_limit_per_minute: int = 30
+    trust_proxy: bool = False
+    """Верить заголовку X-Forwarded-For. Включается только за своим обратным прокси."""
     cors_origins: list[str] = []
     environment: Literal["dev", "prod"] = "prod"
 
