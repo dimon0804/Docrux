@@ -1,5 +1,5 @@
 import { ChevronDown, FileSearch, RotateCcw, ShieldCheck } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { CheckBanner } from "@/components/CheckBanner";
@@ -31,6 +31,11 @@ function Workspace() {
   const { state, pick, setDocType, read, question, focus, reset } = useWorkspace();
   const { docTypes, failed } = useReference();
   const [draft, setDraft] = useState("");
+
+  // Экран чтения и результат начинаются сверху, даже если форму отправили из середины страницы.
+  useEffect(() => {
+    if (state.phase !== "idle") window.scrollTo({ top: 0, behavior: "instant" });
+  }, [state.phase]);
 
   const choose = (file: File) => {
     const problem = pick(file);

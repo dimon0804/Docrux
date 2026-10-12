@@ -4,6 +4,12 @@ A digital secretary for a university dean's office. A student uploads a photo of
 
 Built for the "Online Dean's Office" case by Center-invest Bank. [Русская версия](README.md)
 
+![Result: the check, answers with clause references and field highlighting](docs/screenshots/result-light.png)
+
+| Home page | Reading a document | Dark theme |
+| --- | --- | --- |
+| ![Home page](docs/screenshots/home-light.png) | ![Reading a document](docs/screenshots/reading.png) | ![Dark theme](docs/screenshots/result-dark.png) |
+
 ## Features
 
 **Required level**
