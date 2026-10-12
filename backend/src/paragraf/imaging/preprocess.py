@@ -142,27 +142,33 @@ def _flatten_color(image: np.ndarray) -> np.ndarray:
 
 
 def _crop_page(image: np.ndarray) -> np.ndarray | None:
-    """Вырезает лист, если он сфотографирован на тёмном или пёстром фоне.
+    """Вырезает лист, если он сфотографирован на столе, и исправляет перспективу.
 
-    Возвращает None, когда лист и так занимает весь кадр или контур найти не удалось.
+    Контур листа ищется несколькими способами: по яркости, по цветности и по
+    границам. Подходит только тот, внутри которого лежит весь текст, а форма
+    похожа на лист бумаги. Если такого нет, возвращается None и снимок не
+    обрезается: ошибочная обрезка вреднее, чем её отсутствие.
     """
     height, width = image.shape[:2]
-    scale = 600 / max(height, width)
+    scale = 640 / max(height, width)
     small = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
     gray = cv2.GaussianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), (5, 5), 0)
-    _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((25, 25), np.uint8))
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
+    ink = _relative_ink(gray)
+    if cv2.countNonZero(ink) < 40:
         return None
-    contour = max(contours, key=cv2.contourArea)
-    share = cv2.contourArea(contour) / (small.shape[0] * small.shape[1])
-    if not 0.25 <= share <= 0.92:
+
+    best: tuple[float, np.ndarray] | None = None
+    for mask in _sheet_masks(small, gray):
+        quad = _largest_quad(mask)
+        if quad is None or not _is_sheet(ink, quad, gray.shape):
+            continue
+        area = cv2.contourArea(quad)
+        if best is None or area > best[0]:
+            best = (area, quad)
+    if best is None:
         return None
-    quad = cv2.approxPolyDP(contour, 0.02 * cv2.arcLength(contour, True), True)
-    if len(quad) != 4 or not cv2.isContourConvex(quad):
-        return None
-    corners = _order_corners(quad.reshape(4, 2).astype(np.float32) / scale)
+
+    corners = _order_corners(best[1].reshape(4, 2).astype(np.float32) / scale)
     top = np.linalg.norm(corners[1] - corners[0])
     bottom = np.linalg.norm(corners[2] - corners[3])
     left = np.linalg.norm(corners[3] - corners[0])
@@ -175,6 +181,80 @@ def _crop_page(image: np.ndarray) -> np.ndarray | None:
     return cv2.warpPerspective(
         image, matrix, (out_w, out_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
     )
+
+
+def _relative_ink(gray: np.ndarray) -> np.ndarray:
+    """Маска текста по относительному контрасту: в тени он падает, а отношение остаётся."""
+    background = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+    background = np.maximum(background, 1).astype(np.float32)
+    ratio = 1.0 - gray.astype(np.float32) / background
+    return (ratio > 0.22).astype(np.uint8) * 255
+
+
+def _sheet_masks(small: np.ndarray, gray: np.ndarray) -> list[np.ndarray]:
+    """Кандидаты в маску листа, полученные разными способами."""
+    close = np.ones((21, 21), np.uint8)
+    masks = []
+
+    _, bright = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    masks.append(cv2.morphologyEx(bright, cv2.MORPH_CLOSE, close))
+
+    # Бумага почти бесцветна, стол обычно имеет оттенок. Цветность мало зависит от тени.
+    lab = cv2.cvtColor(small, cv2.COLOR_BGR2LAB).astype(np.float32)
+    chroma = cv2.magnitude(lab[..., 1] - 128, lab[..., 2] - 128)
+    chroma = cv2.GaussianBlur(np.clip(chroma * 4, 0, 255).astype(np.uint8), (5, 5), 0)
+    threshold, neutral = cv2.threshold(chroma, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    if threshold >= 12:
+        masks.append(cv2.morphologyEx(neutral, cv2.MORPH_CLOSE, close))
+
+    # Границы листа: замкнутая область внутри контура перепадов яркости.
+    edges = cv2.Canny(gray, 30, 90)
+    edges = cv2.dilate(edges, np.ones((5, 5), np.uint8))
+    filled = np.zeros_like(gray)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if contours:
+        cv2.drawContours(filled, [max(contours, key=cv2.contourArea)], -1, 255, cv2.FILLED)
+        masks.append(filled)
+    return masks
+
+
+def _largest_quad(mask: np.ndarray) -> np.ndarray | None:
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+    contour = cv2.convexHull(max(contours, key=cv2.contourArea))
+    share = cv2.contourArea(contour) / (mask.shape[0] * mask.shape[1])
+    if not 0.2 <= share <= 0.93:
+        return None
+    perimeter = cv2.arcLength(contour, True)
+    for tolerance in (0.02, 0.03, 0.05):
+        quad = cv2.approxPolyDP(contour, tolerance * perimeter, True)
+        if len(quad) == 4 and cv2.isContourConvex(quad):
+            return quad
+    return None
+
+
+def _is_sheet(ink: np.ndarray, quad: np.ndarray, shape: tuple[int, ...]) -> bool:
+    """Проверяет, что контур действительно лист: весь текст внутри, форма как у бумаги."""
+    points = quad.reshape(4, 2).astype(np.float32)
+    ordered = _order_corners(points)
+    sides = [float(np.linalg.norm(ordered[(i + 1) % 4] - ordered[i])) for i in range(4)]
+    if min(sides) < 0.25 * max(shape):
+        return False
+    horizontal, vertical = (sides[0] + sides[2]) / 2, (sides[1] + sides[3]) / 2
+    ratio = min(horizontal, vertical) / max(horizontal, vertical)
+    if not 0.55 <= ratio <= 0.92:
+        return False
+    if min(sides[0], sides[2]) / max(sides[0], sides[2]) < 0.75:
+        return False
+    if min(sides[1], sides[3]) / max(sides[1], sides[3]) < 0.75:
+        return False
+
+    inside = np.zeros(shape[:2], np.uint8)
+    cv2.fillConvexPoly(inside, ordered.astype(np.int32), 255)
+    total = cv2.countNonZero(ink)
+    outside = cv2.countNonZero(cv2.bitwise_and(ink, cv2.bitwise_not(inside)))
+    return total > 0 and outside / total <= 0.06
 
 
 def _order_corners(points: np.ndarray) -> np.ndarray:
