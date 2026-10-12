@@ -23,7 +23,7 @@ function suggestions(analysis: Analysis): string[] {
   return [
     "Кто принимает окончательное решение?",
     first ? `Укажи значение поля «${first.label}»` : "",
-    date ? `Какова ${date.label.toLowerCase()}?` : "",
+    date ? `Что указано в поле «${date.label}»?` : "",
     "Какой размер стипендии положен студенту?",
   ].filter(Boolean);
 }
