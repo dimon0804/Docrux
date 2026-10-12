@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+const WORDS = ["выравниваю снимок", "читаю текст", "заполняю карточку", "сверяю с Положением"];
 const STEPS = ["Выравниваю снимок", "Читаю текст", "Заполняю карточку", "Сверяю с Положением"];
 
 type Props = { preview: string | null };
@@ -34,7 +35,17 @@ export function ReadingState({ preview }: Props) {
         )}
         <span aria-hidden="true" className="scanner-line" />
       </div>
-      <p className="mt-5 text-[15px] font-semibold">{STEPS[step]}…</p>
+      <div className="word-loader mt-5" aria-hidden="true">
+        <span>Сейчас</span>
+        <span className="word-loader__words">
+          {[...WORDS, WORDS[0]].map((word, index) => (
+            <span key={index} className="word-loader__word">
+              {word}
+            </span>
+          ))}
+        </span>
+      </div>
+      <p className="sr-only">{STEPS[step]}</p>
       <ol className="mt-3 flex justify-center gap-1.5" aria-hidden="true">
         {STEPS.map((label, index) => (
           <li
