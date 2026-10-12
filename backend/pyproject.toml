@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "paragraf"
+version = "0.1.0"
+description = "Цифровой секретарь деканата: читает фото документа и отвечает со ссылкой на пункт Положения"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "python-multipart>=0.0.12",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "pyyaml>=6.0",
+    "numpy>=1.26",
+    "opencv-python-headless>=4.10",
+    "pillow>=10.4",
+    "pymupdf>=1.24",
+    "pytesseract>=0.3.13",
+    "rapidfuzz>=3.10",
+    "snowballstemmer>=2.2",
+    "typer>=0.12",
+    "structlog>=24.4",
+]
+
+[project.optional-dependencies]
+semantic = [
+    "onnxruntime>=1.19",
+    "tokenizers>=0.20",
+    "huggingface-hub>=0.26",
+]
+paddle = ["rapidocr>=3.0", "onnxruntime>=1.19"]
+bot = ["aiogram>=3.13"]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "httpx>=0.27",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "types-PyYAML",
+]
+
+[project.scripts]
+paragraf = "paragraf.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/paragraf"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003", "S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = ["ocr: тесты, которым нужен установленный Tesseract"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
