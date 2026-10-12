@@ -87,7 +87,8 @@ def is_blank(value: str | None) -> bool:
 
 def strip_placeholder(value: str) -> str:
     """Убирает линию-прочерк, оставшуюся от незаполненной части строки."""
-    value = re.sub(r"_{2,}", " ", value)
+    # Подчёркиваний в значениях не бывает: это обрывки линии для заполнения.
+    value = re.sub(r"_+", " ", value)
     return squash(value).strip(" .:;,")
 
 
