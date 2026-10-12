@@ -23,6 +23,20 @@ export function Footer() {
           <Link href="/cookies" className="text-text-2 transition-colors hover:text-brand-text">
             Файлы cookie и локальное хранилище
           </Link>
+          <a
+            href="https://clv-digital.tech"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-2 transition-colors hover:text-brand-text"
+          >
+            Разработано в CLV-DIGITAL
+          </a>
+          <a
+            href="mailto:ceo.director@clv-digital.tech"
+            className="text-text-2 transition-colors hover:text-brand-text"
+          >
+            ceo.director@clv-digital.tech
+          </a>
         </nav>
       </div>
     </footer>

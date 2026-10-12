@@ -89,8 +89,13 @@ export function Privacy() {
 
       <h2>Вопросы</h2>
       <p>
-        Напишите нам через раздел Issues в репозитории проекта. Если политика изменится, новая
-        редакция появится на этой странице с обновлённой датой.
+        Сервис разработала команда{" "}
+        <a href="https://clv-digital.tech" target="_blank" rel="noopener noreferrer">
+          CLV-DIGITAL
+        </a>
+        . По любым вопросам об обработке данных пишите на{" "}
+        <a href="mailto:ceo.director@clv-digital.tech">ceo.director@clv-digital.tech</a>. Если
+        политика изменится, новая редакция появится на этой странице с обновлённой датой.
       </p>
     </Prose>
   );
