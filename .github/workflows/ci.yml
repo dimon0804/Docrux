@@ -77,13 +77,16 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Recognize 30 documents and answer 120 questions
         run: |
-          docker run --rm --user root -v "$PWD/data/open:/data" paragraf-api:ci \
-            paragraf batch /data/documents.json --out /data/results.json
+          mkdir -p out && chmod 777 out
+          # Запуск от пользователя образа и с теми же ограничениями, что в docker-compose.
+          docker run --rm --read-only --tmpfs /tmp --cap-drop ALL \
+            -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" paragraf-api:ci \
+            paragraf batch /data/documents.json --out /out/results.json
       - name: Compare with the reference
         run: |
           python data/open/evaluate.py \
             --reference data/open/reference_results.json \
-            --predictions data/open/results.json --report report.json
+            --predictions out/results.json --report report.json
           python - <<'PY'
           import json, sys
           report = json.load(open("report.json"))

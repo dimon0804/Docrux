@@ -27,6 +27,8 @@ ADD --checksum=sha256:b617eb6830ffabaaa795dd87ea7fd251adfe9cf0efe05eb9a2e8128b77
     --chmod=644 \
     https://github.com/tesseract-ocr/tessdata_best/raw/${TESSDATA_COMMIT}/rus.traineddata \
     /usr/share/tessdata_best/rus.traineddata
+# ADD применяет права и к созданной папке, поэтому вход в неё открываем отдельно.
+RUN chmod 755 /usr/share/tessdata_best
 
 
 FROM base AS build

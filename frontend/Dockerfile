@@ -13,7 +13,11 @@ LABEL org.opencontainers.image.title="Параграф Web" \
       org.opencontainers.image.licenses="MIT"
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /web/dist /srv
-RUN caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+# У бинарника в базовом образе есть привилегия на привязку к портам ниже 1024. Сервис слушает 8080,
+# поэтому снимаем её: без этого контейнер не запустится со сброшенными привилегиями.
+RUN cp /usr/bin/caddy /tmp/caddy \
+    && mv -f /tmp/caddy /usr/bin/caddy \
+    && caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 # Caddy работает от непривилегированного пользователя и пишет служебные файлы только в /tmp.
 ENV XDG_CONFIG_HOME=/tmp/caddy/config \
     XDG_DATA_HOME=/tmp/caddy/data
