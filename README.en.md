@@ -1,0 +1,154 @@
+# Paragraf
+
+A digital secretary for a university dean's office. A student uploads a photo of a certificate or an application and asks a question. The service reads the picture, fills in a card of fields, checks the required data and answers with a reference to the exact clause of the regulations.
+
+Built for the "Online Dean's Office" case by Center-invest Bank. [Русская версия](README.md)
+
+## Features
+
+**Required level**
+
+- Accepts a photo or a scan in JPG, PNG or PDF and a question in Russian.
+- Recognizes text with Tesseract.
+- Fills in the card for three document types. An empty field gets the value "не найдено" (not found).
+- Checks completeness against the regulations and lists what is missing.
+- Names the source in every answer: a clause of the regulations or a document field.
+- Says so plainly when neither the document nor the regulations contain the answer.
+
+**Advanced level**
+
+- Detects the document type on its own.
+- Handles poor pictures: tilt up to 30°, shadow, glare, low resolution, a sheet photographed on a desk.
+- A new document type is one YAML file, with no code changes.
+- Shows where each field was found on the picture.
+
+## Quick start
+
+Docker is the only requirement.
+
+```sh
+git clone <repository url> paragraf
+cd paragraf
+docker compose up --build
+```
+
+Open <http://localhost:8080>. The home page offers three sample documents, one per type.
+
+## Producing results.json
+
+```sh
+docker compose build api
+docker run --rm --user root -v "$PWD/data/open:/data" paragraf-api \
+  paragraf batch /data/documents.json --out /data/results.json
+
+python data/open/evaluate.py \
+  --reference data/open/reference_results.json \
+  --predictions data/open/results.json
+```
+
+Point the command at the closed set folder to process it. Document types are taken from the manifest.
+
+## Quality
+
+All numbers come from recognizing images. The PDF text layer is not used.
+
+| Set | Documents | Fields | Check | Questions |
+| --- | ---: | ---: | ---: | ---: |
+| Open set from the organizers | 30 | 1.000 | 1.000 | 1.000 |
+| Our own documents in the same layout | 90 | 1.000 | 1.000 | 1.000 |
+
+Our own documents are produced by `tools/synth.py` with different names, universities, group codes and numbers. This shows that the service reads the document instead of remembering the open set.
+
+Robustness was measured on the same 90 documents damaged by `tools/degrade.py`:
+
+| What was done to the picture | Fields | Check | Questions |
+| --- | ---: | ---: | ---: |
+| Tilt up to 30° | 1.000 | 1.000 | 1.000 |
+| Shadow over half of the sheet | 0.999 | 0.989 | 1.000 |
+| Lamp glare | 0.998 | 1.000 | 1.000 |
+| Low resolution, about 600 pixels wide | 1.000 | 1.000 | 1.000 |
+| Heavy JPEG compression | 1.000 | 1.000 | 1.000 |
+| Blur and noise | 0.998 | 0.978 | 1.000 |
+| Sheet photographed on a desk: perspective, tilt, shadow, compression | 1.000 | 1.000 | 1.000 |
+
+## How it works
+
+1. **Intake.** The format is detected from the file content, not from its extension. A PDF becomes an image of its first page.
+2. **Preparation.** The service finds the sheet on the desk and fixes perspective, estimates the tilt, evens out the light and enlarges small photos. When the sheet contour is doubtful, the picture is left uncropped.
+3. **Recognition.** Tesseract 5 with the accurate Russian model returns words and their coordinates.
+4. **Card.** Lines shaped like "Label: value" are matched to fields by fuzzy label comparison. Dates become `YYYY-MM-DD`; look-alike letters and digits in codes are repaired.
+5. **Signature and seal.** Only the presence of a drawing is checked. The words "Подпись" and "М.П." do not count: recognized text is subtracted before the analysis.
+6. **Check.** The card is compared with the required fields of the type.
+7. **Answer.** A question is one of: completeness, a field value, who makes the final decision. Anything else is treated as unanswerable. No language model writes the answer, so the service cannot invent a fact.
+
+## Adding a document type
+
+Put a file into `config/doc_types`:
+
+```yaml
+id: library_card
+title: Читательский билет
+fields:
+  - key: reader_name
+    label: ФИО читателя
+    type: person
+    rule: "1.1"
+  - key: card_number
+    label: Номер билета
+    type: code
+    rule: "1.1"
+```
+
+After a restart the type appears in the interface, in type detection and in answers. The regulations live in `config/rules.md`.
+
+## Tools and models
+
+No external OCR or language model APIs are used. Everything runs on the CPU of an ordinary laptop.
+
+| Purpose | Tool |
+| --- | --- |
+| Text recognition | Tesseract 5.5, `rus` model from `tessdata_best` |
+| Image processing | OpenCV, Pillow |
+| PDF reading | PyMuPDF |
+| Label matching | RapidFuzz |
+| Word stems in questions | Snowball (Russian stemmer) |
+| HTTP API | FastAPI, Uvicorn, Pydantic |
+| Interface | React, TypeScript, Vite, Tailwind CSS, Base UI, Motion, Sonner, Lucide |
+| Gateway | Caddy |
+| Code checks | pytest, Ruff, Vitest, ESLint |
+
+## Security and privacy
+
+- A file is processed in memory and never stored. There is no database and there are no accounts.
+- Only JPG, PNG and PDF up to 15 MB are accepted, with a limit on image size in pixels.
+- Requests per address are rate limited.
+- Containers run without root, with a read-only file system and no extra privileges. The API is not exposed; requests go through Caddy.
+- A Content-Security-Policy and the other security headers are set. No third-party scripts, fonts or trackers are loaded.
+- Logs hold the request time, the document type and the check result. Document contents are never logged.
+
+## Development
+
+```sh
+cd backend
+python -m venv .venv && . .venv/bin/activate
+pip install -e ".[dev]"
+pytest
+uvicorn paragraf.api.app:app --reload
+
+cd frontend
+npm install
+npm run dev
+```
+
+Local recognition needs Tesseract with the Russian language. Tests read the PDF text layer of the open set, so they pass without it.
+
+## Limitations
+
+- The service targets printed documents with labelled fields. Handwriting in fields is not recognized.
+- Only the first page of a PDF is read.
+- The presence of a signature and a seal is checked, not their authenticity.
+- The check is preliminary. The final decision belongs to a dean's office employee, clause 1.3 of the regulations.
+
+## License
+
+MIT. The data in `data/open` belongs to the hackathon organizers; all details in it are fictional.
