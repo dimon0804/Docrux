@@ -6,8 +6,12 @@ from rapidfuzz import fuzz
 
 from paragraf import textnorm
 from paragraf.doctypes import DocType, DocTypeRegistry
+from paragraf.extraction import freeform
 from paragraf.extraction.fields import locate
 from paragraf.models import Line
+
+MIN_SCORE = 0.3
+MIN_MARGIN = 0.07
 
 
 def score_type(doc_type: DocType, lines: list[Line]) -> float:
@@ -25,11 +29,13 @@ def score_type(doc_type: DocType, lines: list[Line]) -> float:
     hits = sum(fuzz.partial_ratio(textnorm.match_key(word), text) >= 88 for word in keywords)
     keyword_share = hits / len(keywords) if keywords else 0.0
 
-    located = locate(doc_type, lines)
-    label_share = len(located) / max(1, len(doc_type.fields) + len(doc_type.composites) * 0)
-    label_share = min(1.0, label_share)
+    # Считаем и поля с метками, и то, что нашлось в свободном тексте по образцам фраз.
+    located = {key for key in locate(doc_type, lines) if "+" not in key}
+    text_fields = [field for field in doc_type.fields if not field.is_mark]
+    loose = freeform.find(doc_type, lines, {field.key for field in text_fields} - located)
+    share = min(1.0, (len(located) + 0.8 * len(loose)) / max(1, len(text_fields)))
 
-    return 0.5 * (title if title >= 0.8 else 0.0) + 0.2 * keyword_share + 0.3 * label_share
+    return 0.45 * (title if title >= 0.8 else 0.0) + 0.2 * keyword_share + 0.35 * share
 
 
 def detect_type(registry: DocTypeRegistry, lines: list[Line]) -> tuple[DocType | None, float]:
@@ -46,6 +52,6 @@ def detect_type(registry: DocTypeRegistry, lines: list[Line]) -> tuple[DocType |
         return None, 0.0
     best_score, best = ranked[0]
     runner_up = ranked[1][0] if len(ranked) > 1 else 0.0
-    if best_score < 0.35 or best_score - runner_up < 0.08:
+    if best_score < MIN_SCORE or best_score - runner_up < MIN_MARGIN:
         return None, best_score
     return best, best_score

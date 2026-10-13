@@ -17,6 +17,8 @@ from paragraf.doctypes import CompositeSpec, DocType, FieldSpec
 from paragraf.models import Box, Line
 
 LABEL_THRESHOLD = 82.0
+FORM_LABELS = 3
+"""Сколько меток с двоеточием должно найтись, чтобы документ считался бланком."""
 
 
 @dataclass
@@ -25,6 +27,8 @@ class Found:
     box: Box | None
     confidence: float
     label_line: Line
+    label_end: float = 0.0
+    """Правый край метки в долях ширины: отсюда начинается место для значения."""
 
 
 @dataclass
@@ -104,17 +108,24 @@ def locate(doc_type: DocType, lines: list[Line]) -> dict[str, Found]:
                 score = _score(key, target)
                 if score >= LABEL_THRESHOLD:
                     candidates.append((score, index, target, value, used))
-            continue
-        # Двоеточие могло потеряться при распознавании: ищем метку в начале строки.
-        text_words = line.text.split()
-        for target in targets:
-            size = len(target.label.split())
-            if not target.primary or size > len(text_words):
+
+    # Двоеточие могло потеряться при распознавании. Метку без двоеточия ищем только в
+    # бланках, где уже нашлось несколько обычных меток: в связном тексте фраза
+    # «форма обучения» в начале строки ещё не значит, что это поле.
+    if len({item[2].key for item in candidates}) >= FORM_LABELS:
+        for index, line in enumerate(lines):
+            if _split(line) is not None:
                 continue
-            key = textnorm.match_key(" ".join(text_words[:size]))
-            score = fuzz.ratio(key, target.label)
-            if score >= 92:
-                candidates.append((score - 5, index, target, " ".join(text_words[size:]), size))
+            text_words = line.text.split()
+            for target in targets:
+                size = len(target.label.split())
+                if not target.primary or size > len(text_words):
+                    continue
+                key = textnorm.match_key(" ".join(text_words[:size]))
+                score = fuzz.ratio(key, target.label)
+                if score >= 92:
+                    rest = " ".join(text_words[size:])
+                    candidates.append((score - 5, index, target, rest, size))
 
     found: dict[str, Found] = {}
     used_lines: set[int] = set()
@@ -124,7 +135,9 @@ def locate(doc_type: DocType, lines: list[Line]) -> dict[str, Found]:
         line = lines[index]
         value, box = _with_continuation(lines, index, value, _value_box(line, used))
         used_lines.add(index)
-        found[target.key] = Found(value, box, _value_confidence(line, used), line)
+        label_words = (line.words or [])[:used]
+        label_end = label_words[-1].box.x + label_words[-1].box.w if label_words else line.box.x
+        found[target.key] = Found(value, box, _value_confidence(line, used), line, label_end)
     return found
 
 

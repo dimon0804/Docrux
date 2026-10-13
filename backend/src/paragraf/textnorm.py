@@ -258,3 +258,109 @@ def clean_person(raw: str) -> str:
 def clean_text(raw: str) -> str:
     """Обычное текстовое значение."""
     return fix_quotes(squash(raw))
+
+
+_NOMINATIVE_PATRONYMIC = re.compile(r"(вич|ич|вна|чна|шна|кызы|оглы)$", re.IGNORECASE)
+
+
+def to_nominative(fio: str) -> str:
+    """Приводит ФИО к именительному падежу: «Иванову Ивану Ивановичу» -> «Иванов Иван Иванович».
+
+    В справках свободной формы ФИО обычно стоит в дательном или родительном
+    падеже. Если отчество уже в именительном, строка возвращается без изменений.
+    """
+    parts = squash(fio).split()
+    if len(parts) != 3 or _NOMINATIVE_PATRONYMIC.search(parts[2]):
+        return squash(fio)
+    morph = _morph()
+    if morph is None:
+        return squash(fio)
+
+    gender = None
+    for parse in morph.parse(parts[2]):
+        if "Patr" in parse.tag:
+            gender = parse.tag.gender
+            break
+    return " ".join(
+        _inflect_part(morph, part, kind, gender)
+        for part, kind in zip(parts, ("Surn", "Name", "Patr"), strict=True)
+    )
+
+
+_PATRONYMIC_ENDINGS = (
+    (r"(?<=ич)(?:а|у|ем|е)$", ""),
+    (r"(?<=[вчш]н)(?:ы|е|у|ой|ою)$", "а"),
+)
+
+
+def _inflect_part(morph, word: str, kind: str, gender: str | None) -> str:
+    if kind == "Patr":
+        # Отчества склоняются строго по правилу, словарь тут только мешает редкими вариантами.
+        for pattern, ending in _PATRONYMIC_ENDINGS:
+            if re.search(pattern, word, flags=re.IGNORECASE):
+                return re.sub(pattern, ending, word, flags=re.IGNORECASE)
+        return word
+    pieces = []
+    for piece in word.split("-"):
+        if kind == "Surn":
+            ruled = _surname_by_rule(piece, gender)
+            if ruled is not None:
+                pieces.append(ruled)
+                continue
+        ranked = sorted(
+            morph.parse(piece),
+            key=lambda item: (
+                kind in item.tag,
+                gender is None or item.tag.gender == gender,
+                "nomn" not in item.tag,
+                "Fixd" not in item.tag,
+            ),
+            reverse=True,
+        )
+        best = ranked[0] if ranked else None
+        result = piece
+        usable = best is not None and (kind in best.tag or kind == "Surn")
+        if usable and "nomn" not in best.tag:
+            wanted = {"nomn", "sing"} | ({gender} if gender else set())
+            inflected = best.inflect(wanted) or best.inflect({"nomn"})
+            if inflected is not None:
+                result = inflected.word
+        pieces.append(result[:1].upper() + result[1:])
+    return "-".join(pieces)
+
+
+_SURNAME_RULES = {
+    "femn": ((r"(?<=[оеёиы][вн])(?:ой|ою|у|е)$", "а"), (r"(?<=[сц]к)(?:ой|ую|ою)$", "ая")),
+    "masc": ((r"(?<=[оеёиы][вн])(?:у|а|ым|е)$", ""), (r"(?<=[сц]к)(?:ому|ого|им|ом)$", "ий")),
+}
+
+
+def _surname_by_rule(word: str, gender: str | None) -> str | None:
+    """Типовые русские фамилии склоняются по правилу надёжнее, чем по словарю."""
+    for pattern, ending in _SURNAME_RULES.get(gender or "", ()):
+        if re.search(pattern, word, flags=re.IGNORECASE):
+            return re.sub(pattern, ending, word, flags=re.IGNORECASE)
+    return None
+
+
+def _morph():
+    global _MORPH
+    if _MORPH is None:
+        try:
+            import pymorphy3
+
+            _MORPH = pymorphy3.MorphAnalyzer()
+        except ImportError:
+            _MORPH = False
+    return _MORPH or None
+
+
+_MORPH = None
+
+
+def apply_choices(raw: str, choices: dict[str, str]) -> str:
+    """Заменяет найденную словоформу словарным значением: «очной» -> «очная»."""
+    for pattern, value in choices.items():
+        if re.search(pattern, raw, flags=re.IGNORECASE):
+            return value
+    return raw

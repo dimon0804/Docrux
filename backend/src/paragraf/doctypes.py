@@ -25,6 +25,10 @@ class FieldSpec(BaseModel):
     mark: MarkKind | None = None
     aliases: list[str] = []
     ask: list[str] = []
+    patterns: list[str] = []
+    """Образцы фраз для документов свободной формы (регулярные выражения с группой value)."""
+    choices: dict[str, str] = {}
+    """Приведение найденного к словарному виду: образец -> значение."""
 
     @model_validator(mode="after")
     def _mark_needs_kind(self) -> FieldSpec:
@@ -52,6 +56,11 @@ class CompositeSpec(BaseModel):
         return [self.label, *self.aliases]
 
 
+class FreeformSpec(BaseModel):
+    patterns: list[str] = []
+    choices: dict[str, str] = {}
+
+
 class DetectSpec(BaseModel):
     titles: list[str] = []
     keywords: list[str] = []
@@ -63,10 +72,21 @@ class DocType(BaseModel):
     detect: DetectSpec = DetectSpec()
     fields: list[FieldSpec]
     composites: list[CompositeSpec] = []
+    freeform: dict[str, FreeformSpec] = {}
 
     @model_validator(mode="after")
     def _check_keys(self) -> DocType:
         keys = [field.key for field in self.fields]
+        unknown_free = set(self.freeform) - set(keys)
+        if unknown_free:
+            raise ValueError(f"тип {self.id}: freeform ссылается на {sorted(unknown_free)}")
+        for field in self.fields:
+            extra = self.freeform.get(field.key)
+            if extra:
+                field.patterns = [*field.patterns, *extra.patterns]
+                field.choices = {**extra.choices, **field.choices}
+            for pattern in field.patterns:
+                _check_pattern(self.id, field.key, pattern)
         if len(keys) != len(set(keys)):
             raise ValueError(f"тип {self.id}: ключи полей повторяются")
         for composite in self.composites:
@@ -93,6 +113,19 @@ class DocType(BaseModel):
             if field.rule not in seen:
                 seen.append(field.rule)
         return sorted(seen, key=_rule_order)
+
+
+def _check_pattern(type_id: str, key: str, pattern: str) -> None:
+    """Проверяет образец при загрузке, чтобы ошибка в конфиге была видна сразу."""
+    import re
+
+    probe = pattern
+    for name in ("fio", "date", "name", "code"):
+        probe = probe.replace("{" + name + "}", "x")
+    try:
+        re.compile(probe)
+    except re.error as exc:
+        raise ValueError(f"тип {type_id}, поле {key}: неверный образец: {exc}") from exc
 
 
 def _rule_order(rule: str) -> tuple[int, ...]:

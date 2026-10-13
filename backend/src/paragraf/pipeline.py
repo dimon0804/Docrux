@@ -6,19 +6,30 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from paragraf import textnorm
 from paragraf.doctypes import DocType, DocTypeRegistry
+from paragraf.extraction import freeform
 from paragraf.extraction.classify import detect_type
 from paragraf.extraction.fields import Found, locate, normalize, split_composite
+from paragraf.extraction.generic import OTHER_TYPE, generic_fields, guess_title
 from paragraf.imaging import marks
 from paragraf.imaging.loader import Page, load_page
 from paragraf.imaging.preprocess import Prepared, prepare
-from paragraf.models import Analysis, Answer, Box, FieldValue, Line, OcrResult
+from paragraf.models import Analysis, Answer, Box, FieldValue, Line, OcrResult, Validation
 from paragraf.ocr.base import OcrEngine
-from paragraf.qa.answerer import Answerer
+from paragraf.ocr.handwriting import HandwritingReader
+from paragraf.qa.answerer import COMPLETENESS_QUESTION, Answerer
 from paragraf.rules.kb import RuleBook
 from paragraf.rules.validate import validate
 from paragraf.settings import Settings, get_settings
 from paragraf.textnorm import NOT_FOUND
+
+FORM_SHARE = 0.6
+"""Доля полей с метками, начиная с которой документ считается бланком."""
+PRINTED_TRUST = 0.45
+"""Ниже этой уверенности печатное значение перепроверяется как рукописное."""
+HANDWRITING_TRUST = 0.35
+"""Ниже этой уверенности рукописное чтение отбрасывается: лучше «не найдено», чем догадка."""
 
 
 class TypeNotDetected(ValueError):
@@ -45,6 +56,7 @@ class Pipeline:
         self.engine = engine
         self.settings = settings or get_settings()
         self.answerer = Answerer(rulebook)
+        self.handwriting = HandwritingReader.load(self.settings.handwriting_model)
 
     @classmethod
     def default(cls, settings: Settings | None = None) -> Pipeline:
@@ -89,17 +101,34 @@ class Pipeline:
         page, prepared, ocr, breaks = self.read(data)
 
         detected, confidence = detect_type(self.registry, ocr.lines)
+        quality = dict(prepared.quality)
+        quality["file_kind"] = page.kind
+        quality["pages"] = page.pages
         if type_id:
             doc_type = self.registry.get(type_id)
         elif detected is not None:
             doc_type = detected
         else:
-            raise TypeNotDetected("Не удалось определить тип документа. Выберите его вручную.")
+            # Документ не похож ни на один известный тип: показываем текст и найденные пары.
+            fields = generic_fields(ocr.lines)
+            analysis = Analysis(
+                document_type=OTHER_TYPE,
+                document_title=guess_title(ocr.lines),
+                supported=False,
+                type_detected=True,
+                type_confidence=round(confidence, 3),
+                ocr_engine=ocr.engine,
+                text=ocr.text,
+                fields=fields,
+                validation=Validation(status="not_applicable", missing_fields=[], sources=[]),
+                quality=quality,
+                page_breaks=breaks,
+                width=prepared.color.shape[1],
+                height=prepared.color.shape[0],
+            )
+            return Processed(analysis=analysis, image=prepared.color)
 
         fields = self.extract(doc_type, ocr.lines, prepared.color)
-        quality = dict(prepared.quality)
-        quality["file_kind"] = page.kind
-        quality["pages"] = page.pages
         analysis = Analysis(
             document_type=doc_type.id,
             document_title=doc_type.title,
@@ -124,10 +153,24 @@ class Pipeline:
             if hit is None:
                 continue
             for key, value in split_composite(composite, hit.raw).items():
-                raw[key] = Found(value, hit.box, hit.confidence, hit.label_line)
+                raw[key] = Found(value, hit.box, hit.confidence, hit.label_line, hit.label_end)
         for key, hit in located.items():
             if "+" not in key:
                 raw[key] = hit
+
+        # Поля без метки на документе ищем в свободном тексте по образцам фраз.
+        text_keys = [spec.key for spec in doc_type.fields if not spec.is_mark]
+        labeled = sum(key in raw for key in text_keys)
+        form_like = labeled >= FORM_SHARE * len(text_keys)
+        if form_like:
+            # Бланк: пустое поле с меткой остаётся пустым, ищем только поля без метки.
+            unlabeled = {key for key in text_keys if key not in raw}
+        else:
+            # Связный текст: одиночная «метка» может оказаться подписью под документом.
+            unlabeled = {
+                key for key in text_keys if key not in raw or textnorm.is_blank(raw[key].raw)
+            }
+        free = freeform.find(doc_type, lines, unlabeled)
 
         mask = marks.ink_mask(color)
         seal = marks.find_seal(color, mask)
@@ -152,11 +195,32 @@ class Pipeline:
                         found=mark.present,
                         box=mark.box if mark.present else None,
                         confidence=round(mark.score, 3),
+                        origin="mark",
                         rule=spec.rule,
                     )
                 )
                 continue
-            value = normalize(spec, hit.raw) if hit else None
+            value = normalize(spec, textnorm.apply_choices(hit.raw, spec.choices)) if hit else None
+            box = hit.box if hit and value is not None else None
+            confidence = hit.confidence if hit else None
+            handwritten = False
+            origin = "label"
+            loose = free.get(spec.key)
+            if value is None and loose is not None:
+                found_raw = textnorm.apply_choices(loose.raw, spec.choices)
+                value = normalize(spec, found_raw)
+                if value is not None and spec.type == "person":
+                    value = textnorm.to_nominative(value)
+                if value is not None:
+                    box, confidence, origin = loose.box, loose.confidence, "text"
+            if hit and self.handwriting and (value is None or hit.confidence < PRINTED_TRUST):
+                # Печатного значения нет или оно ненадёжно: возможно, поле заполнено от руки.
+                zone = marks.handwritten_zone(color, mask, lines, hit.label_line, hit.label_end)
+                if zone is not None:
+                    text, score = self.handwriting.read(zone[0])
+                    written = normalize(spec, text)
+                    if written is not None and score >= HANDWRITING_TRUST:
+                        value, box, confidence, handwritten = written, zone[1], score, True
             fields.append(
                 FieldValue(
                     key=spec.key,
@@ -164,19 +228,28 @@ class Pipeline:
                     type=spec.type,
                     value=value if value is not None else NOT_FOUND,
                     found=value is not None,
-                    raw=hit.raw if hit else None,
-                    box=hit.box if hit and value is not None else None,
-                    confidence=round(hit.confidence, 3) if hit else None,
+                    raw=hit.raw if hit else (loose.raw if loose else None),
+                    box=box,
+                    confidence=round(confidence, 3) if confidence is not None else None,
+                    handwritten=handwritten,
+                    origin=origin,
                     rule=spec.rule,
                 )
             )
         return fields
 
-    def ask(self, analysis: Analysis, question: str) -> Answer:
-        return self.answerer.answer(self.registry.get(analysis.document_type), analysis, question)
+    def _type(self, analysis: Analysis) -> DocType | None:
+        return self.registry.get(analysis.document_type) if analysis.supported else None
+
+    def ask(self, analysis: Analysis, question: str, assistant: bool = False) -> Answer:
+        """Отвечает на вопрос. assistant включает рассказ о документе и поиск по Положению."""
+        return self.answerer.answer(self._type(analysis), analysis, question, assistant)
 
     def check(self, analysis: Analysis) -> Answer:
-        return self.answerer.completeness(self.registry.get(analysis.document_type), analysis)
+        doc_type = self._type(analysis)
+        if doc_type is None:
+            return self.answerer.answer(None, analysis, COMPLETENESS_QUESTION)
+        return self.answerer.completeness(doc_type, analysis)
 
 
 def _stack(

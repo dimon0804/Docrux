@@ -272,6 +272,7 @@ def render(
     rng: random.Random,
     pdf_path: Path,
     png_path: Path,
+    hand_font: str | None = None,
 ) -> None:
     spec = TYPES[doc_type]
     regular, bold = font_files()
@@ -301,9 +302,32 @@ def render(
     for key, label in spec["fields"]:
         value = card[key]
         text = "_" * 32 if value == "не найдено" else shown(key, str(value), worded)
-        page.insert_text(
-            (left, y), f"{label}: {text}", fontsize=11.5, color=dark, **kwargs
-        )
+        if hand_font and value != "не найдено":
+            # Бланк с линией, значение вписано от руки синей ручкой.
+            page.insert_text(
+                (left, y), f"{label}:", fontsize=11.5, color=dark, **kwargs
+            )
+            start = left + pymupdf.Font(fontfile=regular).text_length(
+                f"{label}: ", fontsize=11.5
+            )
+            page.draw_line(
+                pymupdf.Point(start, y + 2),
+                pymupdf.Point(start + 215, y + 2),
+                color=(0.6, 0.6, 0.6),
+                width=0.5,
+            )
+            page.insert_text(
+                (start + rng.uniform(2, 10), y + rng.uniform(-1.5, 1.0)),
+                text,
+                fontsize=rng.uniform(14.5, 16.5),
+                color=(0.1, 0.2, 0.55),
+                fontname="hand",
+                fontfile=hand_font,
+            )
+        else:
+            page.insert_text(
+                (left, y), f"{label}: {text}", fontsize=11.5, color=dark, **kwargs
+            )
         y += 27.5
 
     page.insert_text(
@@ -421,7 +445,21 @@ def reference(
     return record, asked
 
 
-def build(out: Path, count: int, seed: int, prefix: str = "synth") -> None:
+HAND_FONTS = [
+    "C:/Windows/Fonts/MISTRAL.TTF",
+    "C:/Windows/Fonts/Gabriola.ttf",
+    "C:/Windows/Fonts/comic.ttf",
+]
+
+
+def build(
+    out: Path, count: int, seed: int, prefix: str = "synth", handwritten: bool = False
+) -> None:
+    fonts = [font for font in HAND_FONTS if Path(font).exists()] if handwritten else []
+    if handwritten and not fonts:
+        raise SystemExit(
+            "Не найдены рукописные шрифты: режим --handwritten работает в Windows."
+        )
     rng = random.Random(seed)
     (out / "documents").mkdir(parents=True, exist_ok=True)
     manifest, questions, records = [], [], []
@@ -441,7 +479,10 @@ def build(out: Path, count: int, seed: int, prefix: str = "synth") -> None:
             card["seal_present"] = rng.random() > 0.25
         pdf_path = out / "documents" / f"{doc_id}.pdf"
         png_path = out / "documents" / f"{doc_id}.png"
-        render(doc_id, doc_type, card, rng.random() < 0.5, rng, pdf_path, png_path)
+        hand = fonts[index % len(fonts)] if fonts else None
+        render(
+            doc_id, doc_type, card, rng.random() < 0.5, rng, pdf_path, png_path, hand
+        )
         record, asked = reference(doc_id, doc_type, card, rng)
         records.append(record)
         questions.extend(asked)
@@ -469,6 +510,14 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=Path, default=Path("data/synth"))
     parser.add_argument("--count", type=int, default=60)
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--handwritten", action="store_true", help="значения вписаны от руки"
+    )
     arguments = parser.parse_args()
-    build(arguments.out, arguments.count, arguments.seed)
+    build(
+        arguments.out,
+        arguments.count,
+        arguments.seed,
+        handwritten=arguments.handwritten,
+    )
     print(f"Готово: {arguments.count} документов в {arguments.out}")

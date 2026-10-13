@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-Status = Literal["document_ok", "missing_fields"]
+Status = Literal["document_ok", "missing_fields", "not_applicable"]
 
 
 class Box(BaseModel):
@@ -61,7 +61,11 @@ class FieldValue(BaseModel):
     raw: str | None = None
     box: Box | None = None
     confidence: float | None = None
-    rule: str
+    handwritten: bool = False
+    """Значение написано от руки и прочитано отдельной моделью."""
+    origin: Literal["label", "text", "mark", "generic"] = "label"
+    """Откуда взято значение: строка с меткой, свободный текст, рисунок или нераспознанный тип."""
+    rule: str = ""
 
 
 class Validation(BaseModel):
@@ -86,6 +90,8 @@ class Analysis(BaseModel):
 
     document_type: str
     document_title: str
+    supported: bool = True
+    """Относится ли документ к типам, которые описывает Положение."""
     type_detected: bool
     type_confidence: float | None = None
     ocr_engine: str

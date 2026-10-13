@@ -163,3 +163,52 @@ def _text_height(lines: list[Line]) -> float:
         word.box.h for line in lines for word in (line.words or []) if len(word.text) >= 3
     )
     return heights[len(heights) // 2] if heights else 0.014
+
+
+def handwritten_zone(
+    color: np.ndarray,
+    mask: np.ndarray,
+    lines: list[Line],
+    label: Line,
+    label_end: float,
+) -> tuple[np.ndarray, Box] | None:
+    """Вырезает место для значения справа от метки, если там что-то написано от руки.
+
+    Чужие строки и линия для заполнения убираются. Если после этого чернил
+    почти не осталось, поле пустое и возвращается None.
+    """
+    height, width = mask.shape
+    text_height = _text_height(lines) * height
+    center = (label.box.y + label.box.h / 2) * height
+    x0 = int(label_end * width + 0.3 * text_height)
+    x1 = int(0.97 * width)
+    y0 = int(max(0, center - 1.7 * text_height))
+    y1 = int(min(height, center + 1.5 * text_height))
+    if x1 - x0 < 3 * text_height:
+        return None
+
+    others = [line for line in lines if line is not label]
+    zone = _erase_text(mask, others)[y0:y1, x0:x1]
+    rule_len = max(25, int(5 * text_height))
+    rules = cv2.morphologyEx(zone, cv2.MORPH_OPEN, np.ones((1, rule_len), np.uint8))
+    rules = cv2.dilate(rules, np.ones((3, 1), np.uint8))
+    strokes = cv2.morphologyEx(cv2.subtract(zone, rules), cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+
+    points = cv2.findNonZero(strokes)
+    if points is None or cv2.countNonZero(strokes) < 2.0 * text_height * text_height:
+        return None
+    bx, by, bw, bh = cv2.boundingRect(points)
+    if bh < 0.6 * text_height or bw < 1.5 * text_height:
+        return None
+
+    pad = int(0.4 * text_height)
+    cx0, cy0 = max(0, x0 + bx - pad), max(0, y0 + by - pad)
+    cx1, cy1 = min(width, x0 + bx + bw + pad), min(height, y0 + by + bh + pad)
+    crop = color[cy0:cy1, cx0:cx1].copy()
+    # Линию для заполнения закрашиваем цветом бумаги, чтобы она не мешала чтению.
+    line_mask = np.zeros(mask.shape, np.uint8)
+    line_mask[y0:y1, x0:x1] = rules
+    paper = np.median(crop.reshape(-1, crop.shape[2]), axis=0)
+    crop[line_mask[cy0:cy1, cx0:cx1] > 0] = paper
+    box = Box(x=cx0 / width, y=cy0 / height, w=(cx1 - cx0) / width, h=(cy1 - cy0) / height)
+    return crop, box

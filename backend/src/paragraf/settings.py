@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     pdf_text_layer: Literal["ignore", "prefer"] = "ignore"
     """ignore: PDF распознаётся как картинка. prefer: берётся текстовый слой, если он есть."""
 
+    handwriting_model: str | None = None
+    """Папка с моделью рукописного текста. Если не задана, почерк не читается."""
+
     max_upload_mb: int = 15
     rate_limit_per_minute: int = 30
     trust_proxy: bool = False
