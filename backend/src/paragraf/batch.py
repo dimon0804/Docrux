@@ -8,6 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from paragraf.models import Analysis
 from paragraf.pipeline import Pipeline
 
 RESULTS_VERSION = "1.0"
@@ -28,6 +29,36 @@ def load_questions(path: Path | None) -> dict[str, list[dict[str, str]]]:
     return grouped
 
 
+def _analyze(
+    pipeline: Pipeline, root: Path, entry: dict[str, Any], source: str, problems: list[str]
+) -> Analysis:
+    """Разбирает документ и не даёт одному плохому файлу сорвать весь прогон.
+
+    Сначала читается файл выбранного вида, при ошибке второй. Если не удалось
+    прочитать ни один, в результат попадает пустая карточка нужного типа:
+    формат results.json остаётся верным, а остальные документы не теряются.
+    """
+    document_id = entry["document_id"]
+    type_id = entry.get("document_type")
+    order = [source, "pdf" if source == "image" else "image"]
+    for kind in order:
+        relative = entry.get(kind)
+        if not relative:
+            continue
+        try:
+            analysis = pipeline.analyze((root / relative).read_bytes(), type_id).analysis
+        except Exception as error:  # один файл не должен останавливать весь набор
+            problems.append(f"{document_id}: {relative} не прочитан ({type(error).__name__})")
+            continue
+        if analysis.supported:
+            return analysis
+        problems.append(f"{document_id}: тип документа не определён")
+    if type_id and type_id in pipeline.registry:
+        problems.append(f"{document_id}: записана пустая карточка")
+        return pipeline.empty(type_id)
+    raise ValueError(f"{document_id}: документ не прочитан, а тип в манифесте не указан")
+
+
 def run_batch(
     pipeline: Pipeline,
     manifest: Path,
@@ -43,14 +74,10 @@ def run_batch(
     root = manifest.parent
     asked = load_questions(questions)
     documents = []
+    problems: list[str] = []
     for entry in load_manifest(manifest):
         document_id = entry["document_id"]
-        other = "pdf" if source == "image" else "image"
-        relative = entry.get(source) or entry.get(other)
-        if not relative:
-            raise ValueError(f"{document_id}: в манифесте нет пути к файлу")
-        processed = pipeline.analyze((root / relative).read_bytes(), entry.get("document_type"))
-        analysis = processed.analysis
+        analysis = _analyze(pipeline, root, entry, source, problems)
         answers = []
         for item in asked.get(document_id, []):
             answer = pipeline.ask(analysis, item["question"])
@@ -74,4 +101,7 @@ def run_batch(
         )
         if progress:
             progress(document_id)
+    if problems and progress:
+        for line in problems:
+            progress(f"ВНИМАНИЕ: {line}")
     return {"version": RESULTS_VERSION, "documents": documents}

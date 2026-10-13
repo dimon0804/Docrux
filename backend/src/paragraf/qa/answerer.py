@@ -192,7 +192,8 @@ class Answerer:
             answerable=True,
             value=None,
             answer=" ".join(lines),
-            sources=[f"field:{field.key}" for field in filled][:12],
+            sources=[f"field:{field.key}" for field in filled][:12]
+            or list(analysis.validation.sources),
             highlight=[field.key for field in filled],
         )
 

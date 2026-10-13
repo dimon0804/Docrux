@@ -250,6 +250,33 @@ class Pipeline:
             )
         return fields
 
+    def empty(self, type_id: str) -> Analysis:
+        """Карточка, в которой ничего не найдено: для файла, который не удалось прочитать."""
+        doc_type = self.registry.get(type_id)
+        fields = [
+            FieldValue(
+                key=spec.key,
+                label=spec.label,
+                type=spec.type,
+                value=False if spec.is_mark else NOT_FOUND,
+                found=False,
+                origin="mark" if spec.is_mark else "label",
+                rule=spec.rule,
+            )
+            for spec in doc_type.fields
+        ]
+        return Analysis(
+            document_type=doc_type.id,
+            document_title=doc_type.title,
+            type_detected=False,
+            ocr_engine="none",
+            text="",
+            fields=fields,
+            validation=validate(doc_type, fields),
+            width=0,
+            height=0,
+        )
+
     def _type(self, analysis: Analysis) -> DocType | None:
         return self.registry.get(analysis.document_type) if analysis.supported else None
 

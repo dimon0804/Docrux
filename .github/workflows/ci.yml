@@ -95,6 +95,40 @@ jobs:
           sys.exit(0 if all(report[name] == 1.0 for name in metrics) else 1)
           PY
 
+  stack:
+    name: Full stack through docker compose
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the stack the way the jury will
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - name: Read a document through the gateway
+        run: |
+          curl -fsS http://localhost:8080/healthz
+          curl -fsS http://localhost:8080/api/health
+          curl -fsS -F "file=@data/open/documents/open-010.png"             -F "question=Что это за документ?"             http://localhost:8080/api/analyze > analyze.json
+          python - <<'PY'
+          import json
+          body = json.load(open("analyze.json", encoding="utf-8"))
+          analysis = body["analysis"]
+          assert analysis["document_type"] == "study_certificate", analysis["document_type"]
+          assert set(analysis["validation"]["missing_fields"]) == {"signature_present", "seal_present"}
+          assert body["check"]["sources"] == ["rule:3.2", "rule:3.3"]
+          assert body["answer"]["intent"] == "about" and "справка об обучении" in body["answer"]["answer"]
+          print("stack answers correctly")
+          PY
+      - name: The API must not be reachable from outside
+        run: |
+          if curl -fsS -m 5 http://localhost:8000/api/health; then exit 1; fi
+      - name: Containers run without root
+        run: |
+          test "$(docker compose exec -T api id -u)" != "0"
+          test "$(docker compose exec -T web id -u)" != "0"
+      - name: Logs
+        if: always()
+        run: docker compose logs --tail 80
+
   security:
     name: Security scan
     runs-on: ubuntu-latest

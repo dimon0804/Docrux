@@ -28,6 +28,13 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 - A new document type is one YAML file, with no code changes.
 - Shows where each field was found on the picture.
 
+**Beyond the brief**
+
+- Reads certificates and applications written as running text, not only forms. Names are put into the nominative case.
+- Does not reject documents of other types. For a protocol or an order it shows the title, the text and the label-value lines it found, and explains why such a document cannot be checked against the regulations.
+- Reads PDF files up to 10 pages.
+- Tells what the uploaded document is and answers questions about the regulations by quoting the right clause.
+
 ## Quick start
 
 Docker is the only requirement.
@@ -50,15 +57,16 @@ No Docker at hand? Open the notebook: it installs the service on a free Colab ma
 
 ```sh
 docker compose build api
-docker run --rm --user root -v "$PWD/data/open:/data" paragraf-api \
-  paragraf batch /data/documents.json --out /data/results.json
+mkdir -p out
+docker run --rm -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" paragraf-api \
+  paragraf batch /data/documents.json --out /out/results.json
 
 python data/open/evaluate.py \
   --reference data/open/reference_results.json \
-  --predictions data/open/results.json
+  --predictions out/results.json
 ```
 
-Point the command at the closed set folder to process it. Document types are taken from the manifest.
+Point the command at the closed set folder to process it. Document types are taken from the manifest. The output follows `results.schema.json`, which a test verifies. A damaged file does not stop the run: it gets an empty card and a warning. Only the answer kinds defined by the format go into `results.json`; document summaries and quotes from the regulations work in the interface only.
 
 ## Quality
 
@@ -70,6 +78,12 @@ All numbers come from recognizing images. The PDF text layer is not used.
 | Our own documents in the same layout | 90 | 1.000 | 1.000 | 1.000 |
 
 Our own documents are produced by `tools/synth.py` with different names, universities, group codes and numbers. This shows that the service reads the document instead of remembering the open set.
+
+Free-form documents come from `tools/freeform.py`: 42 certificates and applications written as running text, with no type hint.
+
+| Set | Type detected | Fields |
+| --- | ---: | ---: |
+| Free-form documents | 42 of 42 | 0.990 |
 
 Robustness was measured on the same 90 documents damaged by `tools/degrade.py`:
 
@@ -126,6 +140,7 @@ The theme switch and the word loader come from the open [Uiverse.io](https://uiv
 | PDF reading | PyMuPDF |
 | Label matching | RapidFuzz |
 | Word stems in questions | Snowball (Russian stemmer) |
+| Name cases | pymorphy3 |
 | HTTP API | FastAPI, Uvicorn, Pydantic |
 | Interface | React, TypeScript, Vite, Tailwind CSS, Base UI, Motion, Sonner, Lucide |
 | Gateway | Caddy |
@@ -158,7 +173,8 @@ Local recognition needs Tesseract with the Russian language. Tests read the PDF 
 
 ## Limitations
 
-- The service targets printed documents with labelled fields. Handwriting in fields is not recognized.
+- Handwriting is not read reliably. Open models misread letters and the service must not invent, so a handwritten field stays empty unless its reading is confirmed.
+- Phrase patterns for free-form documents cover common wordings, not all of them. They are extended in the config with no code changes.
 - Up to 10 pages of a PDF are read. Pages are joined into one picture and fields are searched on all of them.
 - The presence of a signature and a seal is checked, not their authenticity.
 - The check is preliminary. The final decision belongs to a dean's office employee, clause 1.3 of the regulations.
