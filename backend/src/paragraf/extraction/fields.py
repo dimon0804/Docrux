@@ -18,6 +18,7 @@ from paragraf.models import Box, Line
 
 LABEL_THRESHOLD = 82.0
 FORM_LABELS = 3
+GHOST_TRUST = 0.3
 """Сколько меток с двоеточием должно найтись, чтобы документ считался бланком."""
 
 
@@ -152,7 +153,9 @@ def _with_continuation(
             same_row = abs((other.box.y + other.box.h / 2) - (line.box.y + line.box.h / 2))
             to_the_right = other.box.x > line.box.x + line.box.w
             filled = ":" not in other.text and not textnorm.is_blank(other.text)
-            if same_row < line.box.h * 0.6 and to_the_right and filled:
+            # Случайные буквы на месте пустой линейки движок читает почти без уверенности.
+            sure = other.confidence >= GHOST_TRUST
+            if same_row < line.box.h * 0.6 and to_the_right and filled and sure:
                 return other.text, other.box
         return value, box
     if index + 1 >= len(lines):

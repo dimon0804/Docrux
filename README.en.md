@@ -90,8 +90,8 @@ Robustness was measured on the same 90 documents damaged by `tools/degrade.py`:
 | What was done to the picture | Fields | Check | Questions |
 | --- | ---: | ---: | ---: |
 | Tilt up to 30° | 1.000 | 1.000 | 1.000 |
-| Shadow over half of the sheet | 0.999 | 0.989 | 1.000 |
-| Lamp glare | 0.998 | 1.000 | 1.000 |
+| Shadow over half of the sheet | 1.000 | 1.000 | 1.000 |
+| Lamp glare | 1.000 | 1.000 | 1.000 |
 | Low resolution, about 600 pixels wide | 1.000 | 1.000 | 1.000 |
 | Heavy JPEG compression | 1.000 | 1.000 | 1.000 |
 | Blur and noise | 0.998 | 0.978 | 1.000 |
