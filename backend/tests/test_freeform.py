@@ -362,3 +362,17 @@ def test_generic_card_splits_two_pairs_on_one_line():
         ("Постановили", "утвердить план и назначить ответственных"),
         ("Секретарь", "Ильина Елена Андреевна"),
     ]
+
+
+@pytest.mark.parametrize(
+    "question",
+    ["Сколько стоит обучение?", "Обучение", "Когда обучение?", "Как подать заявление?"],
+)
+def test_one_topic_word_is_not_enough_for_an_answer(pipeline, study_doc, question):
+    answer = pipeline.ask(study_doc, question, assistant=True)
+    assert not answer.answerable and answer.sources == []
+
+
+def test_procedure_question_is_refused_in_batch_mode_too(pipeline, study_doc):
+    answer = pipeline.ask(study_doc, "Куда нести справку?")
+    assert not answer.answerable and answer.sources == []

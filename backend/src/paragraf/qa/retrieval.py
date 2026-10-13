@@ -83,7 +83,8 @@ class RuleIndex:
         hinted = self._by_hint(asked)
         if hinted is not None:
             return [hinted]
-        if asked - self.vocabulary:
+        # Одно слово темы не задаёт: «обучение» встречается в десятке пунктов.
+        if len(asked) < 2 or asked - self.vocabulary:
             return []
         weight = sum(self.idf[term] for term in asked)
         ranked: list[Match] = []

@@ -70,6 +70,16 @@ _ABOUT = re.compile(
     r"|что\s+(ты\s+)?(прочитал|распознал|нашел|видишь)"
 )
 
+# «Как подать заявление?», «Куда нести справку?»: спрашивают о порядке действий,
+# а не о том, что написано в документе.
+_PROCEDURE = re.compile(
+    r"^(как|куда|где|когда)\s+(мне\s+|можно\s+|нужно\s+|надо\s+)?\w+(ть|ти|чь)(ся)?\b"
+)
+# «Обязательна ли подпись?», «Нужна ли печать?»: спрашивают о требовании Положения.
+_REQUIREMENT = re.compile(
+    r"\b(обязательн\w*|нужн\w*|нужен|необходим\w*)\s+ли\b|\b(требу\w+|должн\w*)\b"
+)
+
 
 class Answerer:
     """Отвечает на вопрос по карточке документа и Положению.
@@ -98,12 +108,17 @@ class Answerer:
             return self.completeness(doc_type, analysis, question)
         if intent.kind == "decision" and DECISION_RULE in self.rulebook:
             return self._decision(question)
-        if intent.kind == "field" and intent.field is not None:
+        plain = _plain(question)
+        section = doc_type.rules[0].split(".")[0] if doc_type.rules else None
+        if intent.kind == "field" and intent.field is not None and not _PROCEDURE.search(plain):
+            if assistant and _REQUIREMENT.search(plain):
+                found = self._rule(question, section)
+                if found is not None:
+                    return found
             return self._field(analysis, question, intent.field.key)
         if assistant:
-            if _ABOUT.search(_plain(question)):
+            if _ABOUT.search(plain):
                 return self._about(analysis, question)
-            section = doc_type.rules[0].split(".")[0] if doc_type.rules else None
             found = self._rule(question, section)
             if found is not None:
                 return found
