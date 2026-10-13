@@ -9,18 +9,20 @@ export type FieldValue = {
   raw: string | null;
   box: Box | null;
   confidence: number | null;
+  handwritten?: boolean;
+  origin?: "label" | "text" | "mark" | "generic";
   rule: string;
 };
 
 export type Validation = {
-  status: "document_ok" | "missing_fields";
+  status: "document_ok" | "missing_fields" | "not_applicable";
   missing_fields: string[];
   sources: string[];
 };
 
 export type Answer = {
   question: string;
-  intent: "completeness" | "decision" | "field" | "unknown";
+  intent: "completeness" | "decision" | "field" | "about" | "rule" | "unknown";
   answerable: boolean;
   value: string | null;
   answer: string;
@@ -31,6 +33,7 @@ export type Answer = {
 export type Analysis = {
   document_type: string;
   document_title: string;
+  supported: boolean;
   type_detected: boolean;
   type_confidence: number | null;
   ocr_engine: string;
@@ -121,8 +124,9 @@ export function ask(analysis: Analysis, question: string, signal?: AbortSignal) 
     signal,
     body: JSON.stringify({
       document_type: analysis.document_type,
+      document_title: analysis.document_title,
       question,
-      fields: analysis.fields.map(({ key, value, found }) => ({ key, value, found })),
+      fields: analysis.fields.map(({ key, value, found, label }) => ({ key, value, found, label })),
     }),
   });
 }

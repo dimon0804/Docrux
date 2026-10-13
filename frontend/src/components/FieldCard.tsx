@@ -34,11 +34,11 @@ export function FieldCard({ analysis, focus, onSelect }: Props) {
       <header className="flex items-baseline justify-between gap-3 px-5 pb-3 pt-5">
         <div>
           <h2 id="card-title" className="text-[17px] font-semibold tracking-[-0.01em]">
-            Карточка документа
+            {analysis.supported ? "Карточка документа" : "Что удалось прочитать"}
           </h2>
           <p className="mt-0.5 text-[13px] text-muted">
             {analysis.document_title}
-            {analysis.type_detected ? " · тип определён автоматически" : ""}
+            {analysis.supported && analysis.type_detected ? " · тип определён автоматически" : ""}
           </p>
         </div>
         <p className="tabular shrink-0 text-[13px] text-muted">
@@ -77,6 +77,11 @@ export function FieldCard({ analysis, focus, onSelect }: Props) {
                   } ${field.type === "date" || field.type === "code" ? "tabular" : ""} break-words`}
                 >
                   {shown(field)}
+                  {field.found && field.origin === "text" && (
+                    <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[11px] font-medium text-muted">
+                      из текста
+                    </span>
+                  )}
                   <span className="sr-only">
                     {field.found ? "" : `. Обязательно по пункту ${field.rule} Положения`}
                   </span>

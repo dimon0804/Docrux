@@ -24,14 +24,14 @@ from paragraf.qa.lexicon import stems
 
 _QUOTED = re.compile(r"[«\"“„]([^«»\"“”„]{2,60})[»\"”]")
 
-_DECISION = re.compile(
+DECISION_PATTERN = re.compile(
     r"кто\b.*\b(принима|прим[еу]т|реша|утвержда|одобр|подтвержда)"
     r"|(окончательн|итогов)\w*\s+решени"
     r"|за\s+кем\s+(последнее\s+слово|решение)"
     r"|кем\s+принима",
 )
 
-_COMPLETENESS = re.compile(
+COMPLETENESS_PATTERN = re.compile(
     r"все\s+(ли\s+)?(обязательн|необходим|нужн)"
     r"|обязательн\w+\s+(сведен|пол|данн|реквизит)"
     r"|комплект"
@@ -153,9 +153,9 @@ def detect(doc_type: DocType, question: str) -> Intent:
             return Intent("field", field, 1.0, quoted[1])
         return Intent("unknown", quoted=quoted[1])
 
-    if _DECISION.search(text):
+    if DECISION_PATTERN.search(text):
         return Intent("decision", score=1.0)
-    if _COMPLETENESS.search(text):
+    if COMPLETENESS_PATTERN.search(text):
         return Intent("completeness", score=1.0)
 
     if quoted:

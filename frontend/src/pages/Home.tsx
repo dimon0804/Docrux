@@ -89,7 +89,13 @@ function Workspace() {
             />
           </div>
           <div className="flex min-w-0 flex-col gap-5">
-            <CheckBanner check={state.check} fields={state.analysis.fields} onSelect={select} />
+            <CheckBanner
+              check={state.check}
+              fields={state.analysis.fields}
+              supported={state.analysis.supported}
+              title={state.analysis.document_title}
+              onSelect={select}
+            />
             <Conversation
               analysis={state.analysis}
               turns={state.turns}

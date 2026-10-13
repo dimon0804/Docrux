@@ -20,7 +20,15 @@ function suggestions(analysis: Analysis): string[] {
   const text = analysis.fields.filter((field) => field.type !== "mark");
   const date = text.find((field) => field.type === "date");
   const first = text[0];
+  if (!analysis.supported) {
+    return [
+      "Что это за документ?",
+      first ? `${first.label}?` : "",
+      "Какие типы документов поддерживаются?",
+    ].filter(Boolean);
+  }
   return [
+    "Что это за документ?",
     "Кто принимает окончательное решение?",
     first ? `Укажи значение поля «${first.label}»` : "",
     date ? `Что указано в поле «${date.label}»?` : "",

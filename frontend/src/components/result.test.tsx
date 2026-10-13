@@ -10,6 +10,7 @@ import { FieldCard } from "./FieldCard";
 const analysis: Analysis = {
   document_type: "study_certificate",
   document_title: "Справка об обучении",
+  supported: true,
   type_detected: true,
   type_confidence: 0.9,
   ocr_engine: "tesseract",

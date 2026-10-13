@@ -38,10 +38,12 @@ class CardField(BaseModel):
     key: str = Field(max_length=64)
     value: str | bool
     found: bool
+    label: str | None = Field(default=None, max_length=120)
 
 
 class AskRequest(BaseModel):
     document_type: str = Field(max_length=64)
+    document_title: str | None = Field(default=None, max_length=120)
     fields: list[CardField] = Field(max_length=64)
     question: str = Field(min_length=1, max_length=500)
 

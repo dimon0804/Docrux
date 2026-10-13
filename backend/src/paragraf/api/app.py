@@ -27,8 +27,9 @@ from paragraf.api.schemas import (
     RuleInfo,
 )
 from paragraf.api.security import RateLimiter, SecurityHeaders
+from paragraf.extraction.generic import OTHER_TYPE
 from paragraf.imaging.loader import UnsupportedFile
-from paragraf.models import Analysis, Answer, FieldValue
+from paragraf.models import Analysis, Answer, FieldValue, Validation
 from paragraf.pipeline import Pipeline, TypeNotDetected
 from paragraf.rules.validate import validate
 from paragraf.settings import Settings, get_settings
@@ -177,7 +178,8 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
                 raise HTTPException(422, str(exc)) from exc
 
         analysis = processed.analysis
-        answer = service.ask(analysis, question.strip()) if question and question.strip() else None
+        asked = question.strip() if question else ""
+        answer = service.ask(analysis, asked, assistant=True) if asked else None
         log.info(
             "document_analyzed",
             request_id=request.scope.get("state", {}).get("request_id"),
@@ -194,6 +196,33 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
 
     @app.post("/api/ask", responses={422: {"model": Problem}, 429: {"model": Problem}})
     async def ask(_: Limited, service: Service, body: AskRequest) -> Answer:
+        if body.document_type == OTHER_TYPE:
+            # Документ незнакомого типа: карточка состоит из строк, найденных на снимке.
+            generic = [
+                FieldValue(
+                    key=item.key,
+                    label=(item.label or item.key)[:120],
+                    type="text",
+                    value=str(item.value)[:300],
+                    found=True,
+                    origin="generic",
+                )
+                for item in body.fields
+                if isinstance(item.value, str) and item.value.strip()
+            ]
+            other = Analysis(
+                document_type=OTHER_TYPE,
+                document_title=(body.document_title or "Документ").strip()[:120],
+                supported=False,
+                type_detected=True,
+                ocr_engine="client",
+                text="",
+                fields=generic,
+                validation=Validation(status="not_applicable", missing_fields=[], sources=[]),
+                width=0,
+                height=0,
+            )
+            return service.ask(other, body.question.strip(), assistant=True)
         if body.document_type not in service.registry:
             raise HTTPException(422, "Неизвестный тип документа.")
         doc_type = service.registry.get(body.document_type)
@@ -237,7 +266,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             width=0,
             height=0,
         )
-        return service.ask(analysis, body.question.strip())
+        return service.ask(analysis, body.question.strip(), assistant=True)
 
     return app
 
