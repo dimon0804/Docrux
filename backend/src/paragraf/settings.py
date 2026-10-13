@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     handwriting_model: str | None = None
     """Папка с моделью рукописного текста. Если не задана, почерк не читается."""
 
+    llm_url: str | None = None
+    """Адрес локального сервера llama.cpp. Если не задан, языковая модель не используется."""
+
     max_upload_mb: int = 15
     rate_limit_per_minute: int = 30
     trust_proxy: bool = False

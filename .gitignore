@@ -20,3 +20,4 @@ npm-install.log
 vite-dev.log
 .models/
 data/my/
+models/

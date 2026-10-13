@@ -21,7 +21,7 @@ function humanDate(iso: string) {
 
 function shown(field: FieldValue): string {
   if (field.type === "mark") return field.found ? "Есть" : "Не найдена";
-  if (!field.found) return "Не найдено";
+  if (!field.found) return field.handwritten ? "Заполнено от руки, прочитать надёжно не удалось" : "Не найдено";
   const value = String(field.value);
   return field.type === "date" ? humanDate(value) : value;
 }
@@ -80,6 +80,16 @@ export function FieldCard({ analysis, focus, onSelect }: Props) {
                   {field.found && field.origin === "text" && (
                     <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[11px] font-medium text-muted">
                       из текста
+                    </span>
+                  )}
+                  {!field.found && field.handwritten && field.guess && (
+                    <span className="mt-1 block text-[13px] font-normal text-muted">
+                      Возможно: {field.guess}. Проверьте по снимку.
+                    </span>
+                  )}
+                  {field.found && field.handwritten && (
+                    <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[11px] font-medium text-muted">
+                      от руки
                     </span>
                   )}
                   <span className="sr-only">

@@ -62,7 +62,9 @@ class FieldValue(BaseModel):
     box: Box | None = None
     confidence: float | None = None
     handwritten: bool = False
-    """Значение написано от руки и прочитано отдельной моделью."""
+    """Поле заполнено от руки."""
+    guess: str | None = None
+    """Как рукописное значение прочитала модель. Это подсказка, а не факт."""
     origin: Literal["label", "text", "mark", "generic"] = "label"
     """Откуда взято значение: строка с меткой, свободный текст, рисунок или нераспознанный тип."""
     rule: str = ""
@@ -81,6 +83,8 @@ class Answer(BaseModel):
     value: str | None
     answer: str
     sources: list[str]
+    quote: str | None = None
+    """Дословная цитата из источника, на которую опирается ответ модели."""
     highlight: list[str] = []
     """Ключи полей, которые стоит подсветить на снимке."""
 

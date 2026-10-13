@@ -10,6 +10,7 @@ export type FieldValue = {
   box: Box | null;
   confidence: number | null;
   handwritten?: boolean;
+  guess?: string | null;
   origin?: "label" | "text" | "mark" | "generic";
   rule: string;
 };
@@ -22,11 +23,12 @@ export type Validation = {
 
 export type Answer = {
   question: string;
-  intent: "completeness" | "decision" | "field" | "about" | "rule" | "unknown";
+  intent: "completeness" | "decision" | "field" | "about" | "rule" | "model" | "unknown";
   answerable: boolean;
   value: string | null;
   answer: string;
   sources: string[];
+  quote?: string | null;
   highlight: string[];
 };
 
@@ -126,6 +128,7 @@ export function ask(analysis: Analysis, question: string, signal?: AbortSignal) 
       document_type: analysis.document_type,
       document_title: analysis.document_title,
       question,
+      text: analysis.text.slice(0, 20000),
       fields: analysis.fields.map(({ key, value, found, label }) => ({ key, value, found, label })),
     }),
   });

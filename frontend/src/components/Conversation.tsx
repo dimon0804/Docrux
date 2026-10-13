@@ -89,6 +89,11 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect }: Props
                     </p>
                   )}
                   <p className="text-[15px] leading-relaxed">{turn.answer.answer}</p>
+                  {turn.answer.quote && (
+                    <blockquote className="mt-2 border-l-2 border-brand/50 pl-3 text-sm leading-relaxed text-text-2">
+                      «{turn.answer.quote}»
+                    </blockquote>
+                  )}
                   {turn.answer.sources.length > 0 && (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                       <span className="mr-1 text-[13px] text-muted">Источник:</span>

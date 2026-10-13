@@ -37,7 +37,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /src
 COPY backend/pyproject.toml ./
 COPY backend/src ./src
-RUN pip install .
+RUN pip install ".[handwriting]"
 
 
 FROM base AS runtime

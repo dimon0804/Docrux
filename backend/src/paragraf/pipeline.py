@@ -19,6 +19,7 @@ from paragraf.models import Analysis, Answer, Box, FieldValue, Line, OcrResult, 
 from paragraf.ocr.base import OcrEngine
 from paragraf.ocr.handwriting import HandwritingReader
 from paragraf.qa.answerer import COMPLETENESS_QUESTION, Answerer
+from paragraf.qa.llm import LocalLLM
 from paragraf.rules.kb import RuleBook
 from paragraf.rules.validate import validate
 from paragraf.settings import Settings, get_settings
@@ -26,10 +27,10 @@ from paragraf.textnorm import NOT_FOUND
 
 FORM_SHARE = 0.6
 """Доля полей с метками, начиная с которой документ считается бланком."""
-PRINTED_TRUST = 0.45
+PRINTED_TRUST = 0.6
+GARBAGE_TRUST = 0.3
+"""Ниже этой уверенности печатное чтение считается случайным набором букв."""
 """Ниже этой уверенности печатное значение перепроверяется как рукописное."""
-HANDWRITING_TRUST = 0.35
-"""Ниже этой уверенности рукописное чтение отбрасывается: лучше «не найдено», чем догадка."""
 
 
 class TypeNotDetected(ValueError):
@@ -55,7 +56,8 @@ class Pipeline:
         self.rulebook = rulebook
         self.engine = engine
         self.settings = settings or get_settings()
-        self.answerer = Answerer(rulebook)
+        llm = LocalLLM(self.settings.llm_url, rulebook) if self.settings.llm_url else None
+        self.answerer = Answerer(rulebook, llm)
         self.handwriting = HandwritingReader.load(self.settings.handwriting_model)
 
     @classmethod
@@ -213,14 +215,23 @@ class Pipeline:
                     value = textnorm.to_nominative(value)
                 if value is not None:
                     box, confidence, origin = loose.box, loose.confidence, "text"
+            guess = None
             if hit and self.handwriting and (value is None or hit.confidence < PRINTED_TRUST):
                 # Печатного значения нет или оно ненадёжно: возможно, поле заполнено от руки.
                 zone = marks.handwritten_zone(color, mask, lines, hit.label_line, hit.label_end)
                 if zone is not None:
                     text, score = self.handwriting.read(zone[0])
-                    written = normalize(spec, text)
-                    if written is not None and score >= HANDWRITING_TRUST:
-                        value, box, confidence, handwritten = written, zone[1], score, True
+                    written = normalize(spec, textnorm.apply_choices(text, spec.choices))
+                    if written is not None and value is not None and _same(written, value):
+                        # Два независимых чтения совпали: значению можно верить.
+                        handwritten = True
+                        box, confidence = zone[1], max(score, hit.confidence)
+                    elif value is None or hit.confidence < GARBAGE_TRUST:
+                        # Почерк читается ненадёжно, а выдумывать нельзя: поле остаётся
+                        # пустым, чтение модели показывается только как подсказка.
+                        handwritten = True
+                        guess = written
+                        value, box, confidence = None, zone[1], score
             fields.append(
                 FieldValue(
                     key=spec.key,
@@ -232,6 +243,7 @@ class Pipeline:
                     box=box,
                     confidence=round(confidence, 3) if confidence is not None else None,
                     handwritten=handwritten,
+                    guess=guess,
                     origin=origin,
                     rule=spec.rule,
                 )
@@ -290,6 +302,10 @@ def _stack(
     merged = Prepared(color=np.vstack(colors), gray=np.vstack(grays), quality=quality)
     ocr = OcrResult(engine=results[0].engine, lines=lines, width=width, height=total)
     return merged, ocr, breaks[:-1]
+
+
+def _same(left: str, right: str) -> bool:
+    return textnorm.compare_key(left) == textnorm.compare_key(right)
 
 
 def _gray(image: np.ndarray) -> np.ndarray:

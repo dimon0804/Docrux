@@ -179,7 +179,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
 
         analysis = processed.analysis
         asked = question.strip() if question else ""
-        answer = service.ask(analysis, asked, assistant=True) if asked else None
+        answer = await run_in_threadpool(service.ask, analysis, asked, True) if asked else None
         log.info(
             "document_analyzed",
             request_id=request.scope.get("state", {}).get("request_id"),
@@ -216,13 +216,13 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
                 supported=False,
                 type_detected=True,
                 ocr_engine="client",
-                text="",
+                text=body.text or "",
                 fields=generic,
                 validation=Validation(status="not_applicable", missing_fields=[], sources=[]),
                 width=0,
                 height=0,
             )
-            return service.ask(other, body.question.strip(), assistant=True)
+            return await run_in_threadpool(service.ask, other, body.question.strip(), True)
         if body.document_type not in service.registry:
             raise HTTPException(422, "Неизвестный тип документа.")
         doc_type = service.registry.get(body.document_type)
@@ -260,13 +260,13 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             document_title=doc_type.title,
             type_detected=False,
             ocr_engine="client",
-            text="",
+            text=body.text or "",
             fields=fields,
             validation=validate(doc_type, fields),
             width=0,
             height=0,
         )
-        return service.ask(analysis, body.question.strip(), assistant=True)
+        return await run_in_threadpool(service.ask, analysis, body.question.strip(), True)
 
     return app
 

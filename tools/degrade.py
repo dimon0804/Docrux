@@ -77,9 +77,7 @@ def lowres(image: np.ndarray, rng: random.Random) -> np.ndarray:
 
 def jpeg(image: np.ndarray, rng: random.Random) -> np.ndarray:
     """Сильное сжатие, как после пересылки в мессенджере."""
-    ok, buffer = cv2.imencode(
-        ".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, rng.randint(22, 38)]
-    )
+    ok, buffer = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, rng.randint(22, 38)])
     return cv2.imdecode(buffer, cv2.IMREAD_COLOR) if ok else image
 
 
@@ -110,9 +108,7 @@ def photo(image: np.ndarray, rng: random.Random) -> np.ndarray:
         ]
     )
     matrix = cv2.getPerspectiveTransform(source, target)
-    warped = cv2.warpPerspective(
-        image, matrix, (canvas_w, canvas_h), flags=cv2.INTER_CUBIC
-    )
+    warped = cv2.warpPerspective(image, matrix, (canvas_w, canvas_h), flags=cv2.INTER_CUBIC)
     mask = cv2.warpPerspective(
         np.full((height, width), 255, np.uint8), matrix, (canvas_w, canvas_h)
     )
@@ -130,9 +126,7 @@ def photo(image: np.ndarray, rng: random.Random) -> np.ndarray:
     out = shadow(out, rng)
     scale = rng.uniform(0.8, 1.0)
     out = cv2.resize(out, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-    ok, buffer = cv2.imencode(
-        ".jpg", out, [cv2.IMWRITE_JPEG_QUALITY, rng.randint(55, 75)]
-    )
+    ok, buffer = cv2.imencode(".jpg", out, [cv2.IMWRITE_JPEG_QUALITY, rng.randint(55, 75)])
     return cv2.imdecode(buffer, cv2.IMREAD_COLOR) if ok else out
 
 

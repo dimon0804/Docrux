@@ -170,17 +170,13 @@ DATE_KEYS = {
 
 def person(rng: random.Random, female: bool = False) -> str:
     if female:
-        return (
-            f"{rng.choice(SURNAMES_F)} {rng.choice(NAMES_F)} {rng.choice(PATRONYMS_F)}"
-        )
+        return f"{rng.choice(SURNAMES_F)} {rng.choice(NAMES_F)} {rng.choice(PATRONYMS_F)}"
     return f"{rng.choice(SURNAMES_M)} {rng.choice(NAMES_M)} {rng.choice(PATRONYMS_M)}"
 
 
 def values(doc_type: str, rng: random.Random, number: int) -> dict[str, str]:
     """Значения полей в нормализованном виде: даты в ISO."""
-    day = lambda start, spread: (
-        start + timedelta(days=rng.randrange(spread))
-    ).isoformat()  # noqa: E731
+    day = lambda start, spread: (start + timedelta(days=rng.randrange(spread))).isoformat()  # noqa: E731
     if doc_type == "study_certificate":
         start_year = rng.choice([2021, 2022, 2023, 2024])
         return {
@@ -220,11 +216,7 @@ def shown(key: str, value: str, worded: bool) -> str:
     if key not in DATE_KEYS:
         return value
     year, month, day = (int(part) for part in value.split("-"))
-    return (
-        f"{day} {MONTHS[month - 1]} {year} года"
-        if worded
-        else f"{day:02d}.{month:02d}.{year}"
-    )
+    return f"{day} {MONTHS[month - 1]} {year} года" if worded else f"{day:02d}.{month:02d}.{year}"
 
 
 def font_files() -> tuple[str | None, str | None]:
@@ -253,15 +245,11 @@ def draw_signature(page: pymupdf.Page, x: float, y: float, rng: random.Random) -
         py = (
             y
             - 6
-            + math.sin(index * rng.uniform(0.9, 1.6))
-            * rng.uniform(3, 9)
-            * (1 - index / steps / 2)
+            + math.sin(index * rng.uniform(0.9, 1.6)) * rng.uniform(3, 9) * (1 - index / steps / 2)
         )
         points.append(pymupdf.Point(px, py))
     page.draw_polyline(points, color=ink, width=1.4)
-    page.draw_line(
-        pymupdf.Point(x + 7, y + 1), pymupdf.Point(x + 94, y - 11), color=ink, width=1.4
-    )
+    page.draw_line(pymupdf.Point(x + 7, y + 1), pymupdf.Point(x + 94, y - 11), color=ink, width=1.4)
 
 
 def render(
@@ -278,12 +266,8 @@ def render(
     regular, bold = font_files()
     document = pymupdf.open()
     page = document.new_page(width=PAGE_W, height=PAGE_H)
-    kwargs = (
-        {"fontname": "body", "fontfile": regular} if regular else {"fontname": "helv"}
-    )
-    bold_kwargs = (
-        {"fontname": "head", "fontfile": bold} if bold else {"fontname": "hebo"}
-    )
+    kwargs = {"fontname": "body", "fontfile": regular} if regular else {"fontname": "helv"}
+    bold_kwargs = {"fontname": "head", "fontfile": bold} if bold else {"fontname": "hebo"}
     left = spec["left"]
     gray, dark = (0.45, 0.45, 0.45), (0.1, 0.13, 0.17)
 
@@ -304,12 +288,8 @@ def render(
         text = "_" * 32 if value == "не найдено" else shown(key, str(value), worded)
         if hand_font and value != "не найдено":
             # Бланк с линией, значение вписано от руки синей ручкой.
-            page.insert_text(
-                (left, y), f"{label}:", fontsize=11.5, color=dark, **kwargs
-            )
-            start = left + pymupdf.Font(fontfile=regular).text_length(
-                f"{label}: ", fontsize=11.5
-            )
+            page.insert_text((left, y), f"{label}:", fontsize=11.5, color=dark, **kwargs)
+            start = left + pymupdf.Font(fontfile=regular).text_length(f"{label}: ", fontsize=11.5)
             page.draw_line(
                 pymupdf.Point(start, y + 2),
                 pymupdf.Point(start + 215, y + 2),
@@ -325,14 +305,10 @@ def render(
                 fontfile=hand_font,
             )
         else:
-            page.insert_text(
-                (left, y), f"{label}: {text}", fontsize=11.5, color=dark, **kwargs
-            )
+            page.insert_text((left, y), f"{label}: {text}", fontsize=11.5, color=dark, **kwargs)
         y += 27.5
 
-    page.insert_text(
-        (left, 653), f"{spec['signature']}:", fontsize=10, color=dark, **kwargs
-    )
+    page.insert_text((left, 653), f"{spec['signature']}:", fontsize=10, color=dark, **kwargs)
     line_x = left + 175
     page.draw_line(
         pymupdf.Point(line_x, 652),
@@ -354,9 +330,7 @@ def render(
                 (12, "МАКЕТ", 7, kwargs),
             ]:
                 source = bold if face is bold_kwargs else regular
-                measure = (
-                    pymupdf.Font(fontfile=source) if source else pymupdf.Font("helv")
-                )
+                measure = pymupdf.Font(fontfile=source) if source else pymupdf.Font("helv")
                 width = measure.text_length(word, fontsize=size)
                 page.insert_text(
                     (473 - width / 2, 652 + offset),
@@ -393,9 +367,7 @@ def reference(
 ) -> tuple[dict, list[dict]]:
     spec = TYPES[doc_type]
     rules = spec["rules"]
-    missing = [
-        key for key, value in card.items() if value == "не найдено" or value is False
-    ]
+    missing = [key for key, value in card.items() if value == "не найдено" or value is False]
     if missing:
         used = sorted({rules.get(key, rules["text"]) for key in missing})
         status = "missing_fields"
@@ -431,9 +403,7 @@ def reference(
     asked, answers = [], []
     for index, (question, expected) in enumerate(questions, start=1):
         question_id = f"{doc_id}-Q{index}"
-        asked.append(
-            {"question_id": question_id, "document_id": doc_id, "question": question}
-        )
+        asked.append({"question_id": question_id, "document_id": doc_id, "question": question})
         answers.append({"question_id": question_id, **expected, "answer": "эталон"})
     record = {
         "document_id": doc_id,
@@ -457,9 +427,7 @@ def build(
 ) -> None:
     fonts = [font for font in HAND_FONTS if Path(font).exists()] if handwritten else []
     if handwritten and not fonts:
-        raise SystemExit(
-            "Не найдены рукописные шрифты: режим --handwritten работает в Windows."
-        )
+        raise SystemExit("Не найдены рукописные шрифты: режим --handwritten работает в Windows.")
     rng = random.Random(seed)
     (out / "documents").mkdir(parents=True, exist_ok=True)
     manifest, questions, records = [], [], []
@@ -467,9 +435,7 @@ def build(
     for index in range(1, count + 1):
         doc_type = type_ids[(index - 1) % len(type_ids)]
         doc_id = f"{prefix}-{index:03d}"
-        card: dict[str, str | bool] = dict(
-            values(doc_type, rng, rng.randint(1000, 9999))
-        )
+        card: dict[str, str | bool] = dict(values(doc_type, rng, rng.randint(1000, 9999)))
         # Треть документов полные, остальные с одним-тремя пропусками.
         gaps = rng.choice([0, 0, 1, 1, 1, 2, 2, 3])
         for key in rng.sample(list(card), k=min(gaps, len(card))):
@@ -480,9 +446,7 @@ def build(
         pdf_path = out / "documents" / f"{doc_id}.pdf"
         png_path = out / "documents" / f"{doc_id}.png"
         hand = fonts[index % len(fonts)] if fonts else None
-        render(
-            doc_id, doc_type, card, rng.random() < 0.5, rng, pdf_path, png_path, hand
-        )
+        render(doc_id, doc_type, card, rng.random() < 0.5, rng, pdf_path, png_path, hand)
         record, asked = reference(doc_id, doc_type, card, rng)
         records.append(record)
         questions.extend(asked)
@@ -510,9 +474,7 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=Path, default=Path("data/synth"))
     parser.add_argument("--count", type=int, default=60)
     parser.add_argument("--seed", type=int, default=7)
-    parser.add_argument(
-        "--handwritten", action="store_true", help="значения вписаны от руки"
-    )
+    parser.add_argument("--handwritten", action="store_true", help="значения вписаны от руки")
     arguments = parser.parse_args()
     build(
         arguments.out,

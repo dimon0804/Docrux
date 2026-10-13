@@ -54,11 +54,7 @@ def to_case(fio: str, case: str) -> str:
 
 def fmt(iso: str, worded: bool) -> str:
     year, month, day = (int(part) for part in iso.split("-"))
-    return (
-        f"{day} {MONTHS[month - 1]} {year} года"
-        if worded
-        else f"{day:02d}.{month:02d}.{year}"
-    )
+    return f"{day} {MONTHS[month - 1]} {year} года" if worded else f"{day:02d}.{month:02d}.{year}"
 
 
 def day(rng: random.Random, start: date, spread: int) -> str:
@@ -226,9 +222,7 @@ def render(
     )
     y = 600
     page.insert_text((60, y), f"{signer}:", fontsize=11, color=dark, **plain)
-    page.draw_line(
-        pymupdf.Point(230, y), pymupdf.Point(350, y), color=(0.6, 0.6, 0.6), width=0.5
-    )
+    page.draw_line(pymupdf.Point(230, y), pymupdf.Point(350, y), color=(0.6, 0.6, 0.6), width=0.5)
     if signed:
         draw_signature(page, 230, y, rng)
     if seal:
@@ -238,9 +232,7 @@ def render(
             page.draw_circle(pymupdf.Point(470, y), 34, color=blue, width=1.2)
         page.insert_text((445, y + 58), "М.П.", fontsize=9, color=dark, **plain)
     document.save(path_pdf, deflate=True)
-    page.get_pixmap(matrix=pymupdf.Matrix(1132 / 595, 1132 / 595), alpha=False).save(
-        path_png
-    )
+    page.get_pixmap(matrix=pymupdf.Matrix(1132 / 595, 1132 / 595), alpha=False).save(path_png)
     document.close()
 
 
@@ -250,9 +242,7 @@ def build(out: Path, count: int, seed: int) -> None:
     manifest, records = [], []
     for index in range(1, count + 1):
         type_id, maker, variants = MAKERS[(index - 1) % len(MAKERS)]
-        card, title, head, body, signer, has_seal = maker(
-            rng, (index // len(MAKERS)) % variants
-        )
+        card, title, head, body, signer, has_seal = maker(rng, (index // len(MAKERS)) % variants)
         signed, sealed = rng.random() > 0.2, rng.random() > 0.2
         fields: dict[str, str | bool] = dict(card)
         fields["signature_present"] = signed
@@ -279,9 +269,7 @@ def build(out: Path, count: int, seed: int) -> None:
                 "pdf": f"documents/{doc_id}.pdf",
             }
         )
-        records.append(
-            {"document_id": doc_id, "document_type": type_id, "fields": fields}
-        )
+        records.append({"document_id": doc_id, "document_type": type_id, "fields": fields})
     (out / "documents.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
