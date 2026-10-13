@@ -19,7 +19,7 @@ from paragraf.models import Analysis, Answer, Box, FieldValue, Line, OcrResult, 
 from paragraf.ocr.base import OcrEngine
 from paragraf.ocr.handwriting import HandwritingReader
 from paragraf.qa.answerer import COMPLETENESS_QUESTION, Answerer
-from paragraf.qa.llm import LocalLLM
+from paragraf.qa.retrieval import load_hints
 from paragraf.rules.kb import RuleBook
 from paragraf.rules.validate import validate
 from paragraf.settings import Settings, get_settings
@@ -56,8 +56,7 @@ class Pipeline:
         self.rulebook = rulebook
         self.engine = engine
         self.settings = settings or get_settings()
-        llm = LocalLLM(self.settings.llm_url, rulebook) if self.settings.llm_url else None
-        self.answerer = Answerer(rulebook, llm)
+        self.answerer = Answerer(rulebook, load_hints(self.settings.hints_path))
         self.handwriting = HandwritingReader.load(self.settings.handwriting_model)
 
     @classmethod

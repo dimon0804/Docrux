@@ -46,7 +46,6 @@ class AskRequest(BaseModel):
     document_title: str | None = Field(default=None, max_length=120)
     fields: list[CardField] = Field(max_length=64)
     question: str = Field(min_length=1, max_length=500)
-    text: str | None = Field(default=None, max_length=20000)
 
 
 class Problem(BaseModel):

@@ -29,46 +29,17 @@ services:
       PARAGRAF_TRUST_PROXY: "true"
       PARAGRAF_RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
       PARAGRAF_MAX_UPLOAD_MB: "15"
-      # Необязательные модели: см. раздел «Дополнительные модели» в README.
-      PARAGRAF_LLM_URL: ${LLM_URL:-}
+      # Необязательная модель рукописного текста: см. раздел «Рукописный текст» в README.
       PARAGRAF_HANDWRITING_MODEL: ${HANDWRITING_MODEL:-}
     volumes:
       - ./models:/models:ro
     # Временные файлы OCR живут только в памяти и исчезают вместе с контейнером.
     tmpfs:
       - /tmp:size=256m,mode=1777
-    mem_limit: 2g
-    cpus: 2.0
+    mem_limit: ${API_MEMORY:-2g}
+    cpus: ${API_CPUS:-2.0}
     networks: [internal]
     expose: ["8000"]
-
-  # Локальная языковая модель для свободных вопросов. Запускается только с профилем llm:
-  #   LLM_URL=http://llm:8080 docker compose --profile llm up
-  llm:
-    <<: *hardening
-    profiles: [llm]
-    image: ghcr.io/ggml-org/llama.cpp:server
-    command:
-      - --model
-      - /models/llm/model.gguf
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8080"
-      - --ctx-size
-      - "6144"
-      - --threads
-      - "${LLM_THREADS:-4}"
-      - --parallel
-      - "1"
-      - --no-webui
-    volumes:
-      - ./models:/models:ro
-    tmpfs:
-      - /tmp:size=64m
-    mem_limit: 3g
-    networks: [internal]
-    expose: ["8080"]
 
   web:
     <<: *hardening

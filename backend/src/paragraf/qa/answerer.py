@@ -13,7 +13,6 @@ from paragraf.doctypes import DocType
 from paragraf.models import Analysis, Answer
 from paragraf.qa.intents import COMPLETENESS_PATTERN, DECISION_PATTERN, detect
 from paragraf.qa.lexicon import stems
-from paragraf.qa.llm import LocalLLM
 from paragraf.qa.retrieval import RuleIndex
 from paragraf.rules.kb import RuleBook
 from paragraf.textnorm import NOT_FOUND
@@ -80,10 +79,9 @@ class Answerer:
     пунктам Положения и работа с документами незнакомых типов.
     """
 
-    def __init__(self, rulebook: RuleBook, llm: LocalLLM | None = None):
+    def __init__(self, rulebook: RuleBook, hints: dict[str, list[str]] | None = None):
         self.rulebook = rulebook
-        self.index = RuleIndex(rulebook)
-        self.llm = llm
+        self.index = RuleIndex(rulebook, hints)
 
     def answer(
         self,
@@ -106,30 +104,10 @@ class Answerer:
             if _ABOUT.search(_plain(question)):
                 return self._about(analysis, question)
             section = doc_type.rules[0].split(".")[0] if doc_type.rules else None
-            found = self._rule(question, section) or self._model(analysis, question)
+            found = self._rule(question, section)
             if found is not None:
                 return found
         return self._nothing(question)
-
-    def _model(self, analysis: Analysis, question: str) -> Answer | None:
-        """Свободный вопрос: спрашиваем локальную модель и принимаем только ответ с цитатой."""
-        if self.llm is None:
-            return None
-        grounded = self.llm.answer(analysis, question)
-        if grounded is None:
-            return None
-        return Answer(
-            question=question,
-            intent="model",
-            answerable=True,
-            value=None,
-            answer=grounded.answer,
-            sources=grounded.sources,
-            quote=grounded.quote,
-            highlight=[
-                s.removeprefix("field:") for s in grounded.sources if s.startswith("field:")
-            ],
-        )
 
     def _nothing(self, question: str) -> Answer:
         return Answer(
@@ -243,9 +221,7 @@ class Answerer:
                 sources=[f"field:{field.key}"],
                 highlight=[field.key],
             )
-        return (
-            self._rule(question, None) or self._model(analysis, question) or self._nothing(question)
-        )
+        return self._rule(question, None) or self._nothing(question)
 
     def completeness(self, doc_type: DocType, analysis: Analysis, question: str = "") -> Answer:
         validation = analysis.validation

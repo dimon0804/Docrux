@@ -32,9 +32,6 @@ class Settings(BaseSettings):
     handwriting_model: str | None = None
     """Папка с моделью рукописного текста. Если не задана, почерк не читается."""
 
-    llm_url: str | None = None
-    """Адрес локального сервера llama.cpp. Если не задан, языковая модель не используется."""
-
     max_upload_mb: int = 15
     rate_limit_per_minute: int = 30
     trust_proxy: bool = False
@@ -49,6 +46,10 @@ class Settings(BaseSettings):
     @property
     def rules_path(self) -> Path:
         return self.config_dir / "rules.md"
+
+    @property
+    def hints_path(self) -> Path:
+        return self.config_dir / "rules_hints.yaml"
 
 
 @lru_cache

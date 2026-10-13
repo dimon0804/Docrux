@@ -127,6 +127,27 @@ fields:
 
 After a restart the type appears in the interface, in type detection and in answers. The regulations live in `config/rules.md`.
 
+## Questions in the student's own words
+
+The regulations say "the maximum length of the leave is not set", while a student asks "how long can I be away?". Short phrases from such questions are tied to clause numbers in `config/rules_hints.yaml`. The answer is always a verbatim quote of the clause.
+
+We tried a small local language model for these questions (Vikhr-Qwen 1.5B through llama.cpp) and dropped it. It attached a real quote and then wrote something false on top of it, and it answered three of eighteen off-topic questions instead of refusing. The phrase hints reach the right clause on the same questions and never break a refusal.
+
+## Handwriting
+
+Tesseract reads printed text. For fields filled in by hand an open TrOCR model fine-tuned on Russian handwriting can be attached:
+
+```sh
+python tools/fetch_models.py handwriting
+HANDWRITING_MODEL=/models/trocr-ru API_MEMORY=6g docker compose up --build
+```
+
+The model takes about 1.5 GB per worker process, so the service needs more memory than the default. In our run the container with the model used 4.2 GB.
+
+In PowerShell set the variables first: `$env:HANDWRITING_MODEL="/models/trocr-ru"; $env:API_MEMORY="6g"; docker compose up --build`. In Git Bash put `MSYS_NO_PATHCONV=1` before the command, otherwise the shell rewrites `/models` into a Windows path.
+
+Neither of the two versions we tested reads names reliably, so the model's reading is not treated as a fact. A value enters the card only when the printed OCR and the handwriting model independently read the same thing. Otherwise the field stays empty with a "filled in by hand" note and the model's reading is shown as a hint. On 30 documents filled in with handwriting fonts this cut wrong values in the card from 37 to 8. Reading accuracy did not improve.
+
 ## Tools and models
 
 No external OCR or language model APIs are used. Everything runs on the CPU of an ordinary laptop.
@@ -141,6 +162,7 @@ The theme switch and the word loader come from the open [Uiverse.io](https://uiv
 | Label matching | RapidFuzz |
 | Word stems in questions | Snowball (Russian stemmer) |
 | Name cases | pymorphy3 |
+| Handwriting (optional) | TrOCR `trocr-base-handwritten-ru` in ONNX, ONNX Runtime |
 | HTTP API | FastAPI, Uvicorn, Pydantic |
 | Interface | React, TypeScript, Vite, Tailwind CSS, Base UI, Motion, Sonner, Lucide |
 | Gateway | Caddy |

@@ -50,14 +50,41 @@ def _sentence_case(text: str) -> str:
     return text[:1].upper() + text[1:] if text else "Документ"
 
 
+_INNER_LABEL = re.compile(r"(?<=[.;])\s+(?=[А-ЯЁA-Z][^:.;]{1,58}:)")
+
+
+def _pairs(lines: list[Line]) -> list[tuple[str, str, Line, bool]]:
+    """Пары «метка, значение» по строкам документа.
+
+    В одной строке может начаться вторая пара («… дверей. Постановили:»), а её
+    значение уйти на следующую строку. Последний признак в кортеже говорит, что
+    пара занимает строку с начала и рамку значения можно взять по словам.
+    """
+    pairs: list[tuple[str, str, Line, bool]] = []
+    skip = False
+    for index, line in enumerate(lines):
+        if skip:
+            skip = False
+            continue
+        parts = _INNER_LABEL.split(line.text)
+        for position, part in enumerate(parts):
+            label, separator, value = part.partition(":")
+            if not separator:
+                continue
+            value = value.strip()
+            last = position == len(parts) - 1
+            if not value and last and index + 1 < len(lines) and ":" not in lines[index + 1].text:
+                value = lines[index + 1].text
+                skip = True
+            pairs.append((label, value, line, len(parts) == 1 and not skip))
+    return pairs
+
+
 def generic_fields(lines: list[Line]) -> list[FieldValue]:
-    """Все строки «Метка: значение», найденные в документе."""
+    """Все пары «Метка: значение», найденные в документе."""
     fields: list[FieldValue] = []
     seen: set[str] = set()
-    for line in lines:
-        label, separator, value = line.text.partition(":")
-        if not separator:
-            continue
+    for label, value, line, whole in _pairs(lines):
         label = textnorm.squash(label)
         value = textnorm.strip_placeholder(value)
         key = textnorm.match_key(label)
@@ -66,7 +93,7 @@ def generic_fields(lines: list[Line]) -> list[FieldValue]:
         if not value or key in seen or re.fullmatch(r"[\d\s.]+", label):
             continue
         seen.add(key)
-        words = line.words or []
+        words = (line.words or []) if whole else []
         split = next((i for i, word in enumerate(words) if ":" in word.text), None)
         tail = words[split + 1 :] if split is not None else []
         box = None

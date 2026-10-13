@@ -83,8 +83,6 @@ class Answer(BaseModel):
     value: str | None
     answer: str
     sources: list[str]
-    quote: str | None = None
-    """Дословная цитата из источника, на которую опирается ответ модели."""
     highlight: list[str] = []
     """Ключи полей, которые стоит подсветить на снимке."""
 

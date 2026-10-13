@@ -1,12 +1,11 @@
 """Скачивает необязательные модели в папку models/.
 
 Без них сервис работает полностью: читает печатные документы и отвечает по
-Положению. Модели добавляют две возможности:
+Положению. Модель добавляет одну возможность:
 
-  handwriting  чтение полей, заполненных от руки (TrOCR, около 1,5 ГБ)
-  llm          ответы на вопросы, заданные своими словами (Vikhr-Qwen 1.5B, около 1,1 ГБ)
+  handwriting  проверка полей, заполненных от руки (TrOCR, около 1,5 ГБ)
 
-    python tools/fetch_models.py handwriting llm
+    python tools/fetch_models.py handwriting
 
 Закачку можно прервать и запустить снова: она продолжится с того же места.
 """
@@ -19,7 +18,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "models"
 TROCR = "https://huggingface.co/Mievst/trocr-base-handwritten-ru-ONNX/resolve/main"
-VIKHR = "https://huggingface.co/Vikhrmodels/Vikhr-Qwen-2.5-1.5B-Instruct-GGUF/resolve/main"
 
 MODELS: dict[str, list[tuple[str, str]]] = {
     "handwriting": [
@@ -39,7 +37,6 @@ MODELS: dict[str, list[tuple[str, str]]] = {
         (f"{TROCR}/onnx/encoder_model.onnx", "trocr-ru/encoder_model.onnx"),
         (f"{TROCR}/onnx/decoder_model.onnx", "trocr-ru/decoder_model.onnx"),
     ],
-    "llm": [(f"{VIKHR}/Vikhr-Qwen-2.5-1.5b-Instruct-Q5_K_M.gguf", "llm/model.gguf")],
 }
 
 

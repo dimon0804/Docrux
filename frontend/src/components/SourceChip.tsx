@@ -30,15 +30,6 @@ export function SourceChip({ source, fieldLabel, onFieldClick }: Props) {
     );
   }
 
-  if (source === "text") {
-    return (
-      <span className={`${chip} border-line bg-surface-2 text-text-2`}>
-        <ScanText aria-hidden="true" className="size-3.5" />
-        Текст документа
-      </span>
-    );
-  }
-
   const number = source.replace(/^rule:/, "");
   const rule = rules.get(number);
   const trigger = `${chip} border-transparent bg-brand-soft text-brand-text hover:bg-brand-soft/70 tabular`;
