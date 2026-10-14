@@ -1,0 +1,87 @@
+from __future__ import annotations
+
+import pytest
+
+from paragraf import sandbox
+from paragraf.pipeline import Pipeline
+
+LEAVE = """
+id: leave_short
+title: Короткое заявление
+fields:
+  - key: who
+    label: ФИО студента
+    type: person
+    rule: "9.1"
+  - key: group
+    label: Учебная группа
+    type: code
+    rule: "9.1"
+  - key: written_on
+    label: Дата заявления
+    type: date
+    rule: "9.2"
+"""
+
+
+def test_example_is_a_valid_type():
+    doc_type = sandbox.parse(sandbox.EXAMPLE)
+    assert doc_type.id == "sandbox_student_council_protocol"
+    assert [field.key for field in doc_type.fields][:2] == ["meeting_date", "chairman"]
+
+
+def test_sandbox_type_reads_a_real_document(pipeline: Pipeline, open_dir):
+    doc_type = sandbox.parse(LEAVE)
+    data = (open_dir / "documents" / "open-012.pdf").read_bytes()
+    analysis = sandbox.run(pipeline, data, doc_type).analysis
+    values = {field.key: field.value for field in analysis.fields}
+    assert values["who"] == "Захаров Фёдор Дмитриевич"
+    assert values["group"] == "ЖР-23-3"
+    # В этом заявлении дата не вписана: поле пустое, проверка ссылается на свой пункт.
+    assert values["written_on"] == "не найдено"
+    assert analysis.validation.status == "missing_fields"
+    assert analysis.validation.sources == ["rule:9.2"]
+    assert analysis.supported is False
+
+
+def test_sandbox_does_not_change_the_service_types(pipeline: Pipeline):
+    before = [doc_type.id for doc_type in pipeline.registry]
+    sandbox.parse(LEAVE)
+    assert [doc_type.id for doc_type in pipeline.registry] == before
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("a: [1, 2", "YAML"),
+        ("- просто список", "словарём"),
+        ("id: x\ntitle: T\nfields: []", "хотя бы с одним полем"),
+        (LEAVE + "freeform:\n  who:\n    patterns: ['(?P<value>.+)']\n", "freeform"),
+        (
+            LEAVE.replace(
+                'rule: "9.1"\n  - key: group',
+                "rule: \"9.1\"\n    patterns: ['(a+)+$']\n  - key: group",
+                1,
+            ),
+            "patterns",
+        ),
+        ("base: &b {x: 1}\nother: *b\n", "Якоря"),
+        (
+            "id: Bad-Id\ntitle: T\nfields:\n  - key: a\n    label: A\n    rule: '1.1'\n",
+            "Ошибка в описании",
+        ),
+        ("x" * (sandbox.MAX_CONFIG_CHARS + 1), "длиннее"),
+    ],
+)
+def test_bad_descriptions_are_rejected_with_a_clear_reason(text: str, message: str):
+    with pytest.raises(sandbox.SandboxError, match=message):
+        sandbox.parse(text)
+
+
+def test_too_many_fields_are_rejected():
+    fields = "\n".join(
+        f"  - key: f{i}\n    label: Поле {i}\n    rule: '1.1'"
+        for i in range(sandbox.MAX_FIELDS + 1)
+    )
+    with pytest.raises(sandbox.SandboxError, match="Полей больше"):
+        sandbox.parse(f"id: many\ntitle: Много\nfields:\n{fields}\n")
