@@ -37,7 +37,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /src
 COPY backend/pyproject.toml ./
 COPY backend/src ./src
-RUN pip install ".[handwriting]"
+# Telegram-бот запускается из того же образа: docker compose --profile bot.
+RUN pip install ".[handwriting,bot]"
 
 
 FROM base AS runtime

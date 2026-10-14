@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,6 +39,14 @@ class Settings(BaseSettings):
     """Верить заголовку X-Forwarded-For. Включается только за своим обратным прокси."""
     cors_origins: list[str] = []
     environment: Literal["dev", "prod"] = "prod"
+
+    bot_token: SecretStr | None = None
+    """Токен Telegram-бота от @BotFather. Нужен только команде paragraf bot."""
+    bot_memory_minutes: int = 30
+    """Сколько бот помнит карточку последнего документа чата для вопросов."""
+    bot_max_chats: int = 1000
+    bot_files_per_minute: int = 5
+    bot_messages_per_minute: int = 20
 
     @property
     def doc_types_dir(self) -> Path:
