@@ -183,7 +183,12 @@ export function Sandbox() {
                   </p>
                 )}
               </div>
-              <FieldCard analysis={result.analysis} focus={focus} onSelect={select} />
+              <FieldCard
+                analysis={result.analysis}
+                title="Карточка по вашему описанию"
+                focus={focus}
+                onSelect={select}
+              />
               <DocumentViewer
                 image={result.image}
                 original={preview}

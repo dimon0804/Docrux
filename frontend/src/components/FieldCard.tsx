@@ -4,6 +4,7 @@ import type { Analysis, FieldValue } from "@/lib/api";
 
 type Props = {
   analysis: Analysis;
+  title?: string;
   focus: string[];
   onSelect: (key: string) => void;
 };
@@ -41,14 +42,14 @@ function shown(field: FieldValue): string {
 }
 
 /** Карточка полей документа. */
-export function FieldCard({ analysis, focus, onSelect }: Props) {
+export function FieldCard({ analysis, title, onSelect, focus }: Props) {
   const found = analysis.fields.filter((field) => field.found).length;
   return (
     <section aria-labelledby="card-title" className="card overflow-hidden">
       <header className="flex items-baseline justify-between gap-3 px-5 pb-3 pt-5">
         <div>
           <h2 id="card-title" className="text-[17px] font-semibold tracking-[-0.01em]">
-            {analysis.supported ? "Карточка документа" : "Что удалось прочитать"}
+            {title ?? (analysis.supported ? "Карточка документа" : "Что удалось прочитать")}
           </h2>
           <p className="mt-0.5 text-[13px] text-muted">
             {analysis.document_title}
