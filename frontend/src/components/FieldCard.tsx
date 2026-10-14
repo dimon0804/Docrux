@@ -19,6 +19,20 @@ function humanDate(iso: string) {
   return `${Number(match[3])} ${MONTHS[Number(match[2]) - 1]} ${match[1]}`;
 }
 
+/** Ниже этой уверенности распознавания значение стоит сверить со снимком (как PRINTED_TRUST на сервере). */
+const UNSURE = 0.6;
+
+function unsure(field: FieldValue) {
+  return (
+    field.found &&
+    field.type !== "mark" &&
+    field.origin !== "generic" &&
+    !field.handwritten &&
+    field.confidence !== null &&
+    field.confidence < UNSURE
+  );
+}
+
 function shown(field: FieldValue): string {
   if (field.type === "mark") return field.found ? "Есть" : "Не найдена";
   if (!field.found) return field.handwritten ? "Заполнено от руки, прочитать надёжно не удалось" : "Не найдено";
@@ -85,6 +99,14 @@ export function FieldCard({ analysis, focus, onSelect }: Props) {
                   {!field.found && field.handwritten && field.guess && (
                     <span className="mt-1 block text-[13px] font-normal text-muted">
                       Возможно: {field.guess}. Проверьте по снимку.
+                    </span>
+                  )}
+                  {unsure(field) && (
+                    <span
+                      title="Буквы распознаны неуверенно. Сверьте значение со снимком."
+                      className="ml-2 rounded-full bg-warn-soft px-2 py-0.5 align-middle text-[11px] font-medium text-warn"
+                    >
+                      сверьте со снимком
                     </span>
                   )}
                   {field.found && field.handwritten && (
