@@ -13,6 +13,7 @@ import { ReadingState } from "@/components/ReadingState";
 import { RuleChecklist } from "@/components/RuleChecklist";
 import { RulesSection } from "@/components/RulesSection";
 import { Samples } from "@/components/Samples";
+import { StudentReply } from "@/components/StudentReply";
 import { TypePicker } from "@/components/TypePicker";
 import { downloadJson, printReport, resultRecord } from "@/lib/report";
 import { ReferenceProvider, useReference } from "@/lib/rules";
@@ -155,6 +156,7 @@ function Workspace() {
               />
             )}
             <FieldCard analysis={state.analysis} focus={state.focus} onSelect={select} />
+            <StudentReply analysis={state.analysis} check={state.check} />
             <details className="no-print card group">
               <summary className="flex list-none items-center justify-between gap-3 px-5 py-4 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
                 Распознанный текст

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { describeFixes } from "@/components/DocumentViewer";
+import { replyText } from "@/components/StudentReply";
 
 import type { Analysis } from "./api";
 import { resultRecord } from "./report";
@@ -78,5 +79,44 @@ describe("describeFixes", () => {
       "тени и неровный свет выровнены",
       "снимок увеличен в 1,5 раза",
     ]);
+  });
+});
+
+describe("replyText", () => {
+  const fields = [
+    {
+      key: "student_name",
+      label: "ФИО студента",
+      value: "Иванов Иван Иванович",
+      found: true,
+      rule: "3.1",
+    },
+    { key: "seal_present", label: "Печать вуза", value: false, found: false, rule: "3.3" },
+    { key: "issue_date", label: "Дата выдачи", value: "не найдено", found: false, rule: "3.1" },
+  ];
+  const doc = {
+    document_title: "Справка об обучении",
+    supported: true,
+    fields,
+  } as unknown as Analysis;
+
+  it("lists what is missing with rule points and leaves the decision to the office", () => {
+    const text = replyText(doc, {
+      value: "missing_fields",
+      sources: ["rule:3.1", "rule:3.3"],
+    } as never);
+    expect(text).toContain("«справка об обучении»");
+    expect(text).toContain("— печать вуза (пункт 3.3 Положения);");
+    expect(text).toContain("— дата выдачи (пункт 3.1 Положения).");
+    expect(text).toContain("Окончательное решение примет сотрудник деканата");
+    expect(text).not.toContain("ФИО");
+  });
+
+  it("names the rule points when everything is in place", () => {
+    const text = replyText(doc, {
+      value: "document_ok",
+      sources: ["rule:3.1", "rule:3.2", "rule:3.3"],
+    } as never);
+    expect(text).toContain("пункты 3.1, 3.2, 3.3 Положения");
   });
 });
