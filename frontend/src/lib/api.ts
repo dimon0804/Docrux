@@ -68,6 +68,7 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly code: string,
+    readonly retryAfter: number | null = null,
   ) {
     super(message);
     this.name = "ApiError";
@@ -94,7 +95,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       // Ответ без JSON: оставляем общее сообщение.
     }
-    throw new ApiError(detail, response.status, code);
+    const retry = Number(response.headers.get("retry-after"));
+    throw new ApiError(
+      detail,
+      response.status,
+      code,
+      Number.isFinite(retry) && retry > 0 ? retry : null,
+    );
   }
   return (await response.json()) as T;
 }

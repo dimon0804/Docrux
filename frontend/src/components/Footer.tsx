@@ -17,6 +17,9 @@ export function Footer() {
           </p>
         </div>
         <nav aria-label="Документы сервиса" className="flex flex-col gap-2.5 text-sm">
+          <Link href="/batch" className="text-text-2 transition-colors hover:text-brand-text">
+            Пакетная проверка
+          </Link>
           <Link href="/privacy" className="text-text-2 transition-colors hover:text-brand-text">
             Политика конфиденциальности
           </Link>

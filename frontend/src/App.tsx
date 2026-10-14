@@ -6,6 +6,7 @@ import { CookieNotice } from "./components/CookieNotice";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { useTheme } from "./lib/theme";
+import { Batch } from "./pages/Batch";
 import { Cookies } from "./pages/Cookies";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
@@ -34,6 +35,7 @@ export function App() {
       <main id="main" className="flex-1">
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/batch" component={Batch} />
           <Route path="/privacy" component={Privacy} />
           <Route path="/cookies" component={Cookies} />
           <Route component={NotFound} />
