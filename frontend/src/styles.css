@@ -178,6 +178,25 @@
     transform: scale(0.97);
   }
 
+  /* Кнопка камеры нужна на телефоне, подсказка про Ctrl+V только на компьютере. */
+  .coarse-only {
+    display: none;
+  }
+
+  .coarse-hide {
+    display: block;
+  }
+
+  @media (pointer: coarse) {
+    .coarse-only {
+      display: flex;
+    }
+
+    .coarse-hide {
+      display: none;
+    }
+  }
+
   /* Круг новой темы рисуется анимацией из theme.ts, стандартный переход не нужен. */
   ::view-transition-old(root),
   ::view-transition-new(root) {

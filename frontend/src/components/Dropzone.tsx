@@ -1,5 +1,5 @@
-import { FileText, ImageUp, RefreshCw } from "lucide-react";
-import { type DragEvent, useId, useRef, useState } from "react";
+import { Camera, FileText, ImageUp, RefreshCw } from "lucide-react";
+import { type DragEvent, useEffect, useId, useRef, useState } from "react";
 
 type Props = {
   file: File | null;
@@ -15,7 +15,30 @@ function size(bytes: number) {
 
 export function Dropzone({ file, preview, disabled, onPick }: Props) {
   const inputId = useId();
+  const cameraId = useId();
   const input = useRef<HTMLInputElement>(null);
+
+  // Снимок экрана или скопированное фото можно вставить сочетанием Ctrl+V.
+  useEffect(() => {
+    if (disabled) return;
+    const paste = (event: ClipboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("input, textarea, [contenteditable]")
+      )
+        return;
+      const pasted = Array.from(event.clipboardData?.files ?? []).find((item) =>
+        /^image\/(png|jpeg)$|^application\/pdf$/.test(item.type),
+      );
+      if (pasted) {
+        event.preventDefault();
+        onPick(pasted);
+      }
+    };
+    window.addEventListener("paste", paste);
+    return () => window.removeEventListener("paste", paste);
+  }, [disabled, onPick]);
   const [over, setOver] = useState(false);
   const depth = useRef(0);
 
@@ -60,11 +83,28 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
           event.target.value = "";
         }}
       />
+      <input
+        id={cameraId}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        disabled={disabled}
+        onChange={(event) => {
+          const chosen = event.target.files?.[0];
+          if (chosen) onPick(chosen);
+          event.target.value = "";
+        }}
+      />
       {file ? (
         <div className="flex items-center gap-4 p-4">
           <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-surface">
             {preview ? (
-              <img src={preview} alt="" className="size-full object-cover object-top" />
+              <img
+                src={preview}
+                alt=""
+                className="size-full object-cover object-top"
+              />
             ) : (
               <FileText aria-hidden="true" className="size-6 text-muted" />
             )}
@@ -100,10 +140,23 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
               Перетащите фото документа сюда
             </span>
             <span className="mt-1 block text-sm text-muted">
-              или <span className="font-medium text-brand-text">выберите файл</span>. JPG, PNG
-              или PDF до 15 МБ
+              или{" "}
+              <span className="font-medium text-brand-text">выберите файл</span>
+              . JPG, PNG или PDF до 15 МБ
+            </span>
+            <span className="coarse-hide mt-1 text-[13px] text-muted">
+              Можно вставить снимок из буфера: Ctrl+V
             </span>
           </span>
+        </label>
+      )}
+      {!file && (
+        <label
+          htmlFor={cameraId}
+          className="coarse-only pressable mx-4 mb-4 items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm font-semibold text-text hover:border-line-strong"
+        >
+          <Camera aria-hidden="true" className="size-4 text-brand-text" />
+          Сфотографировать документ
         </label>
       )}
     </div>
