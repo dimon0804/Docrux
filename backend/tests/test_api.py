@@ -375,3 +375,16 @@ def test_speech_rejects_wrong_audio_format():
         recognizer.transcribe(buffer.getvalue())
     with pytest.raises(SpeechError, match="прочитать"):
         recognizer.transcribe(b"not a wav file")
+
+
+def test_metrics_count_documents_and_refusals(client, open_dir):
+    data = (open_dir / "documents" / "open-012.pdf").read_bytes()
+    client.post("/api/analyze", files={"file": ("a.pdf", data, "application/pdf")})
+    client.post("/api/analyze", files={"file": ("a.txt", b"hello", "text/plain")})
+    text = client.get("/metrics").text
+    assert (
+        'paragraf_documents_total{document_type="academic_leave_application",status="missing_fields"}'
+        in text
+    )
+    assert 'paragraf_rejected_total{reason="unsupported"}' in text
+    assert "paragraf_analyze_seconds_count" in text

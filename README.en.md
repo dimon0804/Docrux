@@ -202,6 +202,18 @@ docker compose up -d
 
 Without the model the microphone button simply does not appear.
 
+## Monitoring
+
+The API serves Prometheus metrics at `/metrics` on the internal network; the gateway does not expose it. Labels carry only the document type, the check result and the kind of question, never personal data. Prometheus and Grafana with a ready dashboard start under their own profile:
+
+```sh
+docker compose --profile monitoring up -d
+```
+
+The dashboard is at <http://localhost:3000>: documents read and their results, median and 95th percentile reading time, honest refusals, the OCR queue and rejected requests.
+
+![Monitoring dashboard in Grafana](docs/screenshots/grafana.png)
+
 ## Telegram bot
 
 The case allows the interface to be a web page or a bot, and we have both. The bot uses the same pipeline as the site, but runs it inside its own process: the file is not sent anywhere else, not even to our API.

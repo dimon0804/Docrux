@@ -15,10 +15,10 @@ import structlog
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
-from paragraf import __version__, sandbox, selfcheck
+from paragraf import __version__, metrics, sandbox, selfcheck
 from paragraf.api import cards
 from paragraf.api.schemas import (
     AnalyzeResponse,
@@ -116,10 +116,12 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
                 headers={"Retry-After": "20"},
             )
         state.ocr_waiting += 1
+        metrics.WAITING.inc()
         try:
             await state.ocr_slots.acquire()
         finally:
             state.ocr_waiting -= 1
+            metrics.WAITING.dec()
         try:
             yield
         finally:
@@ -141,6 +143,8 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             503: "busy",
         }
         body = Problem(detail=str(exc.detail), code=codes.get(exc.status_code, "error"))
+        if exc.status_code in (413, 415, 422, 429, 503):
+            metrics.REJECTED.labels(body.code).inc()
         return JSONResponse(body.model_dump(), status_code=exc.status_code, headers=exc.headers)
 
     @app.exception_handler(RequestValidationError)
@@ -153,6 +157,12 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
         log.error("unhandled_error", error=type(exc).__name__, path=request.url.path)
         body = Problem(detail="Внутренняя ошибка сервиса. Попробуйте ещё раз.", code="internal")
         return JSONResponse(body.model_dump(), status_code=500)
+
+    @app.get("/metrics", include_in_schema=False)
+    async def prometheus() -> Response:
+        # Шлюз отдаёт наружу только /api, поэтому метрики видны лишь во внутренней сети.
+        content, media_type = metrics.render()
+        return Response(content, media_type=media_type)
 
     @app.get("/api/health")
     async def health() -> dict[str, str]:
@@ -217,7 +227,8 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
 
         async with ocr_slot(request):
             try:
-                processed = await run_in_threadpool(service.analyze, data, type_id)
+                with metrics.ANALYZE_SECONDS.time():
+                    processed = await run_in_threadpool(service.analyze, data, type_id)
             except UnsupportedFile as exc:
                 raise HTTPException(415, str(exc)) from exc
             except TypeNotDetected as exc:
@@ -226,6 +237,9 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
         analysis = processed.analysis
         asked = question.strip() if question else ""
         answer = await run_in_threadpool(service.ask, analysis, asked, True) if asked else None
+        metrics.DOCUMENTS.labels(analysis.document_type, analysis.validation.status).inc()
+        if answer is not None:
+            metrics.ANSWERS.labels(answer.intent, str(answer.answerable).lower()).inc()
         log.info(
             "document_analyzed",
             request_id=request.scope.get("state", {}).get("request_id"),
@@ -249,7 +263,9 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
                 raise HTTPException(422, "Неизвестный тип документа.")
             doc_type = service.registry.get(body.document_type)
             analysis = await run_in_threadpool(cards.restore, doc_type, body.fields)
-        return await run_in_threadpool(service.ask, analysis, body.question.strip(), True)
+        answer = await run_in_threadpool(service.ask, analysis, body.question.strip(), True)
+        metrics.ANSWERS.labels(answer.intent, str(answer.answerable).lower()).inc()
+        return answer
 
     @app.post("/api/check", responses={422: {"model": Problem}, 429: {"model": Problem}})
     async def check(_: Limited, service: Service, body: CheckRequest) -> CheckResponse:

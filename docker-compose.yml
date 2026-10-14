@@ -34,6 +34,8 @@ services:
       # Вопросы голосом: модель Vosk в models/speech-ru (python tools/fetch_models.py speech).
       # Если папки нет, кнопка микрофона просто не появляется.
       PARAGRAF_SPEECH_MODEL: ${SPEECH_MODEL:-/models/speech-ru}
+      # Счётчики Prometheus от всех процессов uvicorn собираются в одной папке в tmpfs.
+      PROMETHEUS_MULTIPROC_DIR: /tmp/metrics
     volumes:
       - ./models:/models:ro
     # Временные файлы OCR живут только в памяти и исчезают вместе с контейнером.
@@ -96,8 +98,53 @@ services:
     # С API и веб-сервером бот не общается, поэтому у него своя сеть.
     networks: [egress]
 
+
+  # Мониторинг: docker compose --profile monitoring up -d, панель на http://localhost:3000
+  prometheus:
+    <<: *hardening
+    profiles: [monitoring]
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    tmpfs:
+      - /prometheus:size=256m,uid=65534,gid=65534
+    mem_limit: 512m
+    networks: [internal]
+
+  grafana:
+    <<: *hardening
+    profiles: [monitoring]
+    image: grafana/grafana-oss:12.1.1
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-paragraf}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/paragraf.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      # Файловая система контейнера только для чтения: база и плагины в tmpfs, журнал в консоль.
+      GF_PATHS_DATA: /var/lib/grafana/data
+      GF_PATHS_PLUGINS: /var/lib/grafana/data/plugins
+      GF_LOG_MODE: console
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    tmpfs:
+      - /var/lib/grafana/data:size=128m,uid=472,gid=0
+      - /tmp:size=64m,mode=1777
+    mem_limit: 512m
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks: [internal, monitoring]
+
 networks:
   internal:
     internal: true
   public:
   egress:
+  monitoring:
