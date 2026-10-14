@@ -49,6 +49,16 @@
 | Съёмка камерой, вставка из буфера, установка на телефон | `Dropzone.tsx`, `manifest.webmanifest` | проверка в браузере |
 | Доступность | вся вёрстка | axe, WCAG 2 A и AA: ноль нарушений на всех страницах в светлой и тёмной теме |
 | Защита от перегрузки | предел пикселей PDF, очередь распознавания с ответом 503, лимиты по адресу и пользователю бота | `test_api.py` |
+| Замечания для сотрудника: даты, курс, шифр ОКСО | `rules/remarks.py` | `test_remarks.py`; на открытом наборе замечаний нет |
+| Самопроверка на открытом наборе в браузере | `selfcheck.py`, `GET /api/selfcheck` (SSE), страница `/selfcheck` | `test_selfcheck_streams_every_document_and_the_organizers_metrics` |
+| Скрытие персональных данных | `lib/privacy.ts` | `privacy.test.ts` |
+| Объяснение каждого ответа | `qa/explain.py`, «Почему так?» | `test_explain.py` |
+| Автопилот для защиты | `lib/autopilot.ts`, Shift+D или `/?demo` | полный прогон на боевом стеке |
+| Вопрос голосом, локально | `speech.py` (Vosk), `lib/recorder.ts` | `test_api.py`, сквозная проверка в браузере |
+| Мини-приложение в Telegram | `bot/app.py`, `WEB_APP_URL` | `test_bot.py` |
+| Несколько фото как страницы | `load_pages`, `POST /api/analyze` с несколькими файлами | `test_several_files_are_read_as_pages_of_one_document` |
+| Сверка студентов в пакете | `lib/students.ts` | `students.test.ts` |
+| Мониторинг | `metrics.py`, профиль `monitoring` (Prometheus и Grafana) | `test_metrics_count_documents_and_refusals` |
 
 ## Формат results.json
 
