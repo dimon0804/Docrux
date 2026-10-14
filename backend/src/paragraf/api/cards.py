@@ -12,6 +12,7 @@ from paragraf.doctypes import DocType, FieldSpec
 from paragraf.extraction.fields import normalize
 from paragraf.extraction.generic import OTHER_TYPE
 from paragraf.models import Analysis, FieldValue, Validation
+from paragraf.rules.remarks import find_remarks
 from paragraf.rules.validate import validate
 from paragraf.textnorm import NOT_FOUND
 
@@ -74,6 +75,7 @@ def restore(doc_type: DocType, sent: list[CardField]) -> Analysis:
         text="",
         fields=fields,
         validation=validate(doc_type, fields),
+        remarks=find_remarks(doc_type, fields),
         width=0,
         height=0,
     )

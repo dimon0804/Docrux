@@ -16,6 +16,8 @@ export type FieldValue = {
   rule: string;
 };
 
+export type Remark = { text: string; fields: string[] };
+
 export type Validation = {
   status: "document_ok" | "missing_fields" | "not_applicable";
   missing_fields: string[];
@@ -44,6 +46,7 @@ export type Analysis = {
   validation: Validation;
   quality: Record<string, number | string | boolean>;
   advice?: string[];
+  remarks?: Remark[];
   page_breaks: number[];
   width: number;
   height: number;
@@ -141,7 +144,12 @@ export function ask(analysis: Analysis, question: string, signal?: AbortSignal) 
   });
 }
 
-export type CheckResponse = { fields: FieldValue[]; validation: Validation; check: Answer };
+export type CheckResponse = {
+  fields: FieldValue[];
+  validation: Validation;
+  check: Answer;
+  remarks?: Remark[];
+};
 
 /** Перепроверка карточки, которую поправили вручную: сервер приводит значения к формату. */
 export function recheck(analysis: Analysis, fields: { key: string; value: string | boolean }[]) {

@@ -242,3 +242,18 @@ def test_reply_stays_within_limit_when_escaping_inflates_it(pipeline: Pipeline):
     answer = answer.model_copy(update={"answer": "&<>" * 700})
     text = logic.format_report(analysis, pipeline.check(analysis), question, answer)
     assert len(text) <= logic.MESSAGE_LIMIT
+
+
+def test_report_lists_remarks(pipeline: Pipeline, open_dir: Path):
+    from paragraf.models import Remark
+
+    analysis = pipeline.analyze((open_dir / "documents" / "open-012.pdf").read_bytes()).analysis
+    analysis = analysis.model_copy(
+        update={
+            "remarks": [
+                Remark(text="Курс «9» вне обычного диапазона от 1 до 6.", fields=["course"])
+            ]
+        }
+    )
+    text = logic.format_report(analysis, pipeline.check(analysis))
+    assert "<b>На что обратить внимание</b>\n• Курс «9»" in text

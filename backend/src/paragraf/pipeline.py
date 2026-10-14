@@ -23,6 +23,7 @@ from paragraf.ocr.handwriting import HandwritingReader
 from paragraf.qa.answerer import COMPLETENESS_QUESTION, Answerer
 from paragraf.qa.retrieval import load_hints
 from paragraf.rules.kb import RuleBook
+from paragraf.rules.remarks import find_remarks
 from paragraf.rules.validate import validate
 from paragraf.settings import Settings, get_settings
 from paragraf.textnorm import NOT_FOUND
@@ -166,6 +167,7 @@ class Pipeline:
             text=ocr.text,
             fields=fields,
             validation=validate(doc_type, fields),
+            remarks=find_remarks(doc_type, fields),
             quality=quality,
             advice=tips,
             page_breaks=breaks,

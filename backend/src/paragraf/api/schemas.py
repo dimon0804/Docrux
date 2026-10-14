@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from paragraf.models import Analysis, Answer, FieldValue, Validation
+from paragraf.models import Analysis, Answer, FieldValue, Remark, Validation
 
 
 class FieldInfo(BaseModel):
@@ -62,6 +62,7 @@ class CheckResponse(BaseModel):
     fields: list[FieldValue]
     validation: Validation
     check: Answer
+    remarks: list[Remark] = []
 
 
 class Problem(BaseModel):

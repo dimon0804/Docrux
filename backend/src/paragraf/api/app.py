@@ -255,6 +255,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             fields=analysis.fields,
             validation=analysis.validation,
             check=service.check(analysis),
+            remarks=analysis.remarks,
         )
 
     @app.get("/api/sandbox/example")

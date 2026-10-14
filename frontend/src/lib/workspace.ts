@@ -128,7 +128,12 @@ function reducer(state: Workspace, action: Action): Workspace {
       );
       return {
         ...state,
-        analysis: { ...state.analysis, fields, validation: action.result.validation },
+        analysis: {
+          ...state.analysis,
+          fields,
+          validation: action.result.validation,
+          remarks: action.result.remarks ?? state.analysis.remarks,
+        },
         check: action.result.check,
         edited: state.edited.includes(action.key) ? state.edited : [...state.edited, action.key],
         turns: state.turns.map((turn) => ({ ...turn, stale: true })),

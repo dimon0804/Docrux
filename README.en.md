@@ -43,6 +43,7 @@ A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/d
 
 **For the dean's office**
 
+- Remarks for the office: a period that ends before it starts, an issue date later than today, an internship certificate issued before the internship ended, a course outside 1–6, a programme code not in the 00.00.00 format. Remarks do not change the check against the regulations; they only point where to look.
 - A rule-by-rule check: every clause shows the items it requires and which of them were found.
 - An empty field is outlined on the picture where its value should have been.
 - The card can be corrected by hand: the value is normalized, the check is redone at once and the field is marked as edited.

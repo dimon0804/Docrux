@@ -11,6 +11,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { Quality } from "@/components/Quality";
 import { PhotoAdvice } from "@/components/PhotoAdvice";
 import { ReadingState } from "@/components/ReadingState";
+import { Remarks } from "@/components/Remarks";
 import { ReadingTrace } from "@/components/ReadingTrace";
 import { RuleChecklist } from "@/components/RuleChecklist";
 import { RulesSection } from "@/components/RulesSection";
@@ -147,6 +148,7 @@ function Workspace() {
               title={state.analysis.document_title}
               onSelect={select}
             />
+            <Remarks remarks={state.analysis.remarks} onSelect={select} />
             <Conversation
               analysis={state.analysis}
               turns={state.turns}

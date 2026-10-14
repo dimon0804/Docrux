@@ -72,6 +72,13 @@ class FieldValue(BaseModel):
     rule: str = ""
 
 
+class Remark(BaseModel):
+    """Замечание для сотрудника: на итог проверки по Положению не влияет."""
+
+    text: str
+    fields: list[str] = []
+
+
 class Validation(BaseModel):
     status: Status
     missing_fields: list[str]
@@ -104,6 +111,7 @@ class Analysis(BaseModel):
     validation: Validation
     quality: dict[str, float | str | bool] = {}
     advice: list[str] = []
+    remarks: list[Remark] = []
     """Советы по съёмке, если снимок мешал распознаванию."""
     page_breaks: list[float] = []
     """Границы страниц на склеенном снимке, в долях высоты."""

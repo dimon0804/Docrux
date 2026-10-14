@@ -160,6 +160,13 @@ def format_report(
     if sources:
         check_block += "\n" + sources
 
+    if analysis.remarks:
+        # Замечания на итог не влияют, но сотруднику и студенту полезно их видеть.
+        notes = "\n".join(
+            f"• {escape(_shorten(remark.text, 200))}" for remark in analysis.remarks[:5]
+        )
+        check_block += f"\n\n<b>На что обратить внимание</b>\n{notes}"
+
     tail = ""
     if question and answer is not None:
         tail = "\n\n" + format_answer(question, answer, analysis)
