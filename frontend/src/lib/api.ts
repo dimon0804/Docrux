@@ -139,6 +139,20 @@ export function ask(analysis: Analysis, question: string, signal?: AbortSignal) 
   });
 }
 
+export type SandboxResponse = { analysis: Analysis; image: string };
+
+export function fetchSandboxExample(signal?: AbortSignal) {
+  return request<{ text: string }>("/api/sandbox/example", { signal });
+}
+
+/** Разбор документа по описанию типа из песочницы: действует только на этот запрос. */
+export function trySandbox(file: File, config: string, signal?: AbortSignal) {
+  const body = new FormData();
+  body.append("file", file);
+  body.append("config", config);
+  return request<SandboxResponse>("/api/sandbox", { method: "POST", body, signal });
+}
+
 export const MAX_FILE_MB = 15;
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 

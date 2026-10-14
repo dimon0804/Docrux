@@ -85,3 +85,35 @@ def test_too_many_fields_are_rejected():
     )
     with pytest.raises(sandbox.SandboxError, match="Полей больше"):
         sandbox.parse(f"id: many\ntitle: Много\nfields:\n{fields}\n")
+
+
+def test_sandbox_endpoint(open_dir):
+    from fastapi.testclient import TestClient
+
+    from paragraf.api.app import create_app
+    from paragraf.settings import Settings
+
+    settings = Settings(
+        config_dir=open_dir.parents[1] / "config",
+        pdf_text_layer="prefer",
+        rate_limit_per_minute=1000,
+    )
+    with TestClient(create_app(settings)) as client:
+        assert "student_council_protocol" in client.get("/api/sandbox/example").json()["text"]
+        data = (open_dir / "documents" / "open-012.pdf").read_bytes()
+        response = client.post(
+            "/api/sandbox",
+            files={"file": ("open-012.pdf", data, "application/pdf")},
+            data={"config": LEAVE},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["analysis"]["document_type"] == "sandbox_leave_short"
+        assert body["image"].startswith("data:image/jpeg;base64,")
+        bad = client.post(
+            "/api/sandbox",
+            files={"file": ("open-012.pdf", data, "application/pdf")},
+            data={"config": "base: &b {x: 1}"},
+        )
+        assert bad.status_code == 422
+        assert "Якоря" in bad.json()["detail"]

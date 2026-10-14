@@ -16,6 +16,12 @@ export function Header({ theme, onToggleTheme }: Props) {
         </Link>
         <nav aria-label="Основная навигация" className="flex items-center gap-1 sm:gap-2">
           <Link
+            href="/sandbox"
+            className="hidden rounded-full px-3.5 py-2 text-sm font-medium text-text-2 transition-colors hover:bg-surface-2 hover:text-text lg:block"
+          >
+            Новый тип
+          </Link>
+          <Link
             href="/batch"
             className="hidden rounded-full px-3.5 py-2 text-sm font-medium text-text-2 transition-colors hover:bg-surface-2 hover:text-text md:block"
           >

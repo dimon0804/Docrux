@@ -11,6 +11,7 @@ import { Cookies } from "./pages/Cookies";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
 import { Privacy } from "./pages/Privacy";
+import { Sandbox } from "./pages/Sandbox";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -36,6 +37,7 @@ export function App() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/batch" component={Batch} />
+          <Route path="/sandbox" component={Sandbox} />
           <Route path="/privacy" component={Privacy} />
           <Route path="/cookies" component={Cookies} />
           <Route component={NotFound} />

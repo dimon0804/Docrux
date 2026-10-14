@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-from paragraf import __version__
+from paragraf import __version__, sandbox
 from paragraf.api.schemas import (
     AnalyzeResponse,
     AskRequest,
@@ -25,6 +25,7 @@ from paragraf.api.schemas import (
     FieldInfo,
     Problem,
     RuleInfo,
+    SandboxResponse,
 )
 from paragraf.api.security import RateLimiter, SecurityHeaders
 from paragraf.extraction.generic import OTHER_TYPE
@@ -267,6 +268,45 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             height=0,
         )
         return await run_in_threadpool(service.ask, analysis, body.question.strip(), True)
+
+    @app.get("/api/sandbox/example")
+    async def sandbox_example() -> dict[str, str]:
+        return {"text": sandbox.EXAMPLE}
+
+    @app.post(
+        "/api/sandbox",
+        responses={
+            413: {"model": Problem},
+            415: {"model": Problem},
+            422: {"model": Problem},
+            429: {"model": Problem},
+        },
+    )
+    async def try_type(
+        request: Request,
+        _: Limited,
+        service: Service,
+        file: Annotated[UploadFile, File(description="JPG, PNG или PDF")],
+        config: Annotated[str, Form(max_length=sandbox.MAX_CONFIG_CHARS)],
+    ) -> SandboxResponse:
+        """Разбор документа по описанию типа, присланному вместе с ним."""
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > max_bytes + 64 * 1024:
+            raise HTTPException(413, f"Файл больше {settings.max_upload_mb} МБ.")
+        try:
+            doc_type = sandbox.parse(config)
+        except sandbox.SandboxError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        data = await file.read(max_bytes + 1)
+        if len(data) > max_bytes:
+            raise HTTPException(413, f"Файл больше {settings.max_upload_mb} МБ.")
+        async with request.app.state.ocr_slots:
+            try:
+                processed = await run_in_threadpool(sandbox.run, service, data, doc_type)
+            except UnsupportedFile as exc:
+                raise HTTPException(415, str(exc)) from exc
+        log.info("sandbox_analyzed", fields=len(doc_type.fields))
+        return SandboxResponse(analysis=processed.analysis, image=_preview(processed.image))
 
     return app
 

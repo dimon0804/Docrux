@@ -34,6 +34,11 @@ class AnalyzeResponse(BaseModel):
     image: str = Field(description="Выровненный снимок: data URL в формате JPEG")
 
 
+class SandboxResponse(BaseModel):
+    analysis: Analysis
+    image: str = Field(description="Выровненный снимок: data URL в формате JPEG")
+
+
 class CardField(BaseModel):
     key: str = Field(max_length=64)
     value: str | bool
