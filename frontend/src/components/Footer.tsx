@@ -20,6 +20,13 @@ export function Footer() {
           <Link href="/batch" className="text-text-2 transition-colors hover:text-brand-text">
             Пакетная проверка
           </Link>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("paragraf:autopilot"))}
+            className="text-left text-text-2 transition-colors hover:text-brand-text"
+          >
+            Показать демо (Shift+D)
+          </button>
           <Link href="/selfcheck" className="text-text-2 transition-colors hover:text-brand-text">
             Самопроверка на открытом наборе
           </Link>

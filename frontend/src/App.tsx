@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Toaster } from "sonner";
 import { Route, Switch, useLocation } from "wouter";
 
+import { Autopilot } from "./components/Autopilot";
 import { CookieNotice } from "./components/CookieNotice";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
@@ -47,6 +48,7 @@ export function App() {
       </main>
       <Footer />
       <CookieNotice />
+      <Autopilot />
       <Toaster
         theme={theme}
         position="bottom-center"

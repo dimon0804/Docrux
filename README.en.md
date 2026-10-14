@@ -73,7 +73,7 @@ docker compose up --build
 
 Open <http://localhost:8080>. The home page offers three sample documents, one per type.
 
-A five-minute tour:
+A five-minute tour. It can also run on its own: Shift+D or the "Показать демо" link at the bottom of the page starts an autopilot that walks through the steps below on the live service with captions (Esc stops it). The same at <http://localhost:8080/?demo>.
 
 1. On the home page pick the "Заявление на отпуск" sample and press "Разобрать документ". The service says the date is missing (clause 4.1) and outlines its place on the picture. Press the pencil next to "Дата заявления", type any date, and the check turns positive at once.
 2. Ask "Какой размер стипендии положен студенту?" (the scholarship amount). Neither the document nor the regulations say it, and the service tells you so.
