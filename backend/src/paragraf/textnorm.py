@@ -272,6 +272,9 @@ def to_nominative(fio: str) -> str:
     parts = squash(fio).split()
     if len(parts) != 3 or _NOMINATIVE_PATRONYMIC.search(parts[2]):
         return squash(fio)
+    # «Ильина Е. А.»: по инициалам не понять ни падеж, ни пол, фамилию не трогаем.
+    if any(len(part.rstrip(".")) <= 1 for part in parts[1:]):
+        return squash(fio)
     morph = _morph()
     if morph is None:
         return squash(fio)

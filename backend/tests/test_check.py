@@ -167,3 +167,10 @@ def test_value_without_letters_or_digits_counts_as_empty(registry):
     assert clean_value(spec, "???") is None
     assert clean_value(spec, " — ") is None
     assert clean_value(spec, "ЖР-23-3") == "ЖР-23-3"
+
+
+def test_surname_with_initials_keeps_its_gender(registry):
+    from paragraf.api.cards import clean_value
+
+    spec = registry.get("internship_certificate").field("supervisor_name")
+    assert clean_value(spec, "Ильина Е. А.").startswith("Ильина")

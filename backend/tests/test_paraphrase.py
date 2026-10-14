@@ -143,3 +143,23 @@ def test_off_topic_questions_with_document_words_are_refused(pipeline: Pipeline,
     analysis = pipeline.analyze((open_dir / "documents" / f"{doc_id}.pdf").read_bytes()).analysis
     answered = [q for q in TRICKY if pipeline.ask(analysis, q).answerable]
     assert answered == []
+
+
+@pytest.mark.parametrize(
+    ("doc_id", "question", "source"),
+    [
+        ("open-001", "Можно узнать ФИО студента?", "field:student_name"),
+        ("open-001", "Нужно уточнить номер справки", "field:document_number"),
+        ("open-012", "Можно ли узнать группу студента?", "field:group"),
+        ("open-012", "С какого числа должен начаться отпуск?", "field:leave_start"),
+        ("open-021", "Когда должна закончиться практика?", "field:internship_end"),
+        ("open-021", "Какую оценку должен был получить студент?", "field:grade"),
+        ("open-001", "Полное ли название вуза указано?", "field:university"),
+    ],
+)
+def test_polite_questions_about_a_field_are_answered(
+    pipeline: Pipeline, open_dir, doc_id, question, source
+):
+    analysis = pipeline.analyze((open_dir / "documents" / f"{doc_id}.pdf").read_bytes()).analysis
+    answer = pipeline.ask(analysis, question)
+    assert answer.sources == [source]
