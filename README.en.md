@@ -53,7 +53,7 @@ A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/d
 
 **For the student**
 
-- Take a photo with the phone camera right from the page or paste a picture with Ctrl+V.
+- Take a photo with the phone camera right from the page or paste a picture with Ctrl+V. Several photos of one document are read as its pages.
 - If the photo is blurred, too small, shaded or tilted, the service says how to retake it.
 - Compare the uploaded photo with the aligned sheet and see what was fixed before reading.
 - Search the regulations with highlighted matches.
@@ -250,7 +250,7 @@ Local recognition needs Tesseract with the Russian language. Tests read the PDF 
 
 The API description is served at `/api/docs`. Main endpoints:
 
-- `POST /api/analyze` — a file and an optional question; returns the card, the completeness check, photo tips (`analysis.advice`) and the aligned picture. An empty field whose label was found has a `hint_box` where the value should have been.
+- `POST /api/analyze` — a file (or several files as pages of one document) and an optional question; returns the card, the completeness check, photo tips (`analysis.advice`) and the aligned picture. An empty field whose label was found has a `hint_box` where the value should have been.
 - `POST /api/ask` — a follow-up question about a card that was already read; no file needed.
 - `POST /api/check` — a card corrected by hand: values are normalized and completeness is checked again.
 - `POST /api/sandbox` — a file and a type description in YAML; reads the file by that description without touching the service's types. `GET /api/sandbox/example` returns a sample description.

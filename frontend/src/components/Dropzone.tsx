@@ -5,7 +5,11 @@ type Props = {
   file: File | null;
   preview: string | null;
   disabled?: boolean;
-  onPick: (file: File) => void;
+  onPick: (file: File, more?: File[]) => void;
+  /** Сколько ещё страниц выбрано вместе с первым файлом. */
+  extraPages?: number;
+  /** Разрешить выбрать несколько снимков как страницы одного документа. */
+  multiple?: boolean;
 };
 
 function size(bytes: number) {
@@ -13,7 +17,19 @@ function size(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} МБ`;
 }
 
-export function Dropzone({ file, preview, disabled, onPick }: Props) {
+export function Dropzone({
+  file,
+  preview,
+  disabled,
+  onPick,
+  extraPages = 0,
+  multiple = false,
+}: Props) {
+  const pickList = (list: FileList | null | undefined) => {
+    const chosen = Array.from(list ?? []);
+    if (chosen.length === 0) return;
+    onPick(chosen[0]!, multiple ? chosen.slice(1) : []);
+  };
   const inputId = useId();
   const cameraId = useId();
   const input = useRef<HTMLInputElement>(null);
@@ -43,8 +59,7 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
     depth.current = 0;
     setOver(false);
     if (disabled) return;
-    const dropped = event.dataTransfer.files[0];
-    if (dropped) onPick(dropped);
+    pickList(event.dataTransfer.files);
   };
 
   return (
@@ -70,12 +85,12 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
         ref={input}
         id={inputId}
         type="file"
+        multiple={multiple}
         accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
         className="sr-only"
         disabled={disabled}
         onChange={(event) => {
-          const chosen = event.target.files?.[0];
-          if (chosen) onPick(chosen);
+          pickList(event.target.files);
           event.target.value = "";
         }}
       />
@@ -106,7 +121,11 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
             <p className="truncate text-sm font-medium" title={file.name}>
               {file.name}
             </p>
-            <p className="mt-0.5 text-[13px] text-muted">{size(file.size)}</p>
+            <p className="mt-0.5 text-[13px] text-muted">
+              {extraPages > 0
+                ? `и ещё ${extraPages} ${extraPages === 1 ? "страница" : extraPages < 5 ? "страницы" : "страниц"}`
+                : size(file.size)}
+            </p>
           </div>
           <label
             htmlFor={inputId}
@@ -134,6 +153,11 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
               или <span className="font-medium text-brand-text">выберите файл</span>. JPG, PNG или
               PDF до 15 МБ
             </span>
+            {multiple && (
+              <span className="mt-1 block text-[13px] text-muted">
+                Несколько фото читаются как страницы одного документа
+              </span>
+            )}
             <span className="coarse-hide mt-1 text-[13px] text-muted">
               Можно вставить снимок из буфера: Ctrl+V
             </span>

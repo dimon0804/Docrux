@@ -43,6 +43,8 @@ PREVIEW_WIDTH = 1400
 MAX_PARALLEL_OCR = 1
 """Разборов одновременно в одном рабочем процессе. Процессов два, ядер у сервиса тоже два,
 а один большой документ занимает до гигабайта памяти."""
+MAX_FILES = 10
+"""Сколько файлов можно прислать как страницы одного документа."""
 MAX_WAITING = 6
 """Сколько запросов может ждать распознавания. Остальным сразу отвечаем, что сервис занят,
 чтобы очередь и загруженные файлы не копились в памяти."""
@@ -184,16 +186,24 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
         request: Request,
         _: Limited,
         service: Service,
-        file: Annotated[UploadFile, File(description="JPG, PNG или одностраничный PDF")],
+        file: Annotated[
+            list[UploadFile],
+            File(description="JPG, PNG или PDF; несколько файлов читаются как страницы"),
+        ],
         doc_type: Annotated[str | None, Form(max_length=64)] = None,
         question: Annotated[str | None, Form(max_length=500)] = None,
     ) -> AnalyzeResponse:
         declared = request.headers.get("content-length")
         if declared and declared.isdigit() and int(declared) > max_bytes + 64 * 1024:
             raise HTTPException(413, f"Файл больше {settings.max_upload_mb} МБ.")
-        data = await file.read(max_bytes + 1)
-        if len(data) > max_bytes:
-            raise HTTPException(413, f"Файл больше {settings.max_upload_mb} МБ.")
+        if len(file) > MAX_FILES:
+            raise HTTPException(422, f"За один раз можно загрузить до {MAX_FILES} файлов.")
+        parts: list[bytes] = []
+        for upload in file:
+            parts.append(await upload.read(max_bytes + 1))
+            if sum(len(part) for part in parts) > max_bytes:
+                raise HTTPException(413, f"Файлы вместе больше {settings.max_upload_mb} МБ.")
+        data: bytes | list[bytes] = parts[0] if len(parts) == 1 else parts
         type_id = (doc_type or "").strip() or None
         if type_id and type_id not in service.registry:
             raise HTTPException(422, "Неизвестный тип документа.")

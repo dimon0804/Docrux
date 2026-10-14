@@ -305,3 +305,27 @@ def test_analysis_reports_step_timings(pipeline, open_dir):
     quality = pipeline.analyze(data).analysis.quality
     for key in ("ms_load", "ms_prepare", "ms_ocr", "ms_detect", "ms_extract", "ocr_lines"):
         assert isinstance(quality[key], (int, float)) and quality[key] >= 0
+
+
+def test_several_files_are_read_as_pages_of_one_document(client, open_dir):
+    first = (open_dir / "documents" / "open-012.pdf").read_bytes()
+    second = (open_dir / "documents" / "open-001.pdf").read_bytes()
+    response = client.post(
+        "/api/analyze",
+        files=[
+            ("file", ("page1.pdf", first, "application/pdf")),
+            ("file", ("page2.pdf", second, "application/pdf")),
+        ],
+        data={"doc_type": "academic_leave_application"},
+    )
+    assert response.status_code == 200
+    analysis = response.json()["analysis"]
+    assert analysis["quality"]["pages"] == 2
+    assert len(analysis["page_breaks"]) == 1
+
+
+def test_too_many_files_are_rejected(client, open_dir):
+    data = (open_dir / "documents" / "open-001.pdf").read_bytes()
+    files = [("file", (f"p{i}.pdf", data, "application/pdf")) for i in range(11)]
+    response = client.post("/api/analyze", files=files)
+    assert response.status_code == 422

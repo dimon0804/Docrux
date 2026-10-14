@@ -117,11 +117,11 @@ export function fetchRules(signal?: AbortSignal) {
 }
 
 export function analyze(
-  file: File,
+  file: File | File[],
   options: { docType?: string; question?: string; signal?: AbortSignal } = {},
 ) {
   const body = new FormData();
-  body.append("file", file);
+  for (const part of Array.isArray(file) ? file : [file]) body.append("file", part);
   if (options.docType) body.append("doc_type", options.docType);
   if (options.question) body.append("question", options.question);
   return request<AnalyzeResponse>("/api/analyze", { method: "POST", body, signal: options.signal });

@@ -15,7 +15,7 @@ from paragraf.extraction.classify import detect_type
 from paragraf.extraction.fields import Found, locate, normalize, split_composite
 from paragraf.extraction.generic import OTHER_TYPE, generic_fields, guess_title
 from paragraf.imaging import advice, marks
-from paragraf.imaging.loader import Page, load_page
+from paragraf.imaging.loader import Page, load_page, load_pages
 from paragraf.imaging.preprocess import Prepared, prepare
 from paragraf.models import Analysis, Answer, Box, FieldValue, Line, OcrResult, Validation
 from paragraf.ocr.base import OcrEngine
@@ -75,14 +75,14 @@ class Pipeline:
             settings,
         )
 
-    def read(self, data: bytes) -> tuple[Page, Prepared, OcrResult, list[float]]:
+    def read(self, data: bytes | list[bytes]) -> tuple[Page, Prepared, OcrResult, list[float]]:
         """Готовит и распознаёт все страницы, затем склеивает их в один длинный снимок.
 
         Возвращает документ, склеенный снимок, общий текст и границы страниц
         в долях высоты. Рамки слов пересчитаны в координаты склеенного снимка.
         """
         started = time.perf_counter()
-        page = load_page(data)
+        page = load_pages(data) if isinstance(data, list) else load_page(data)
         loaded = time.perf_counter()
         spent_prepare = spent_ocr = 0.0
         use_layer = self.settings.pdf_text_layer == "prefer" and page.has_text_layer
@@ -115,7 +115,7 @@ class Pipeline:
         joined.quality["ms_ocr"] = round(spent_ocr * 1000)
         return page, joined, ocr, breaks
 
-    def analyze(self, data: bytes, type_id: str | None = None) -> Processed:
+    def analyze(self, data: bytes | list[bytes], type_id: str | None = None) -> Processed:
         page, prepared, ocr, breaks = self.read(data)
 
         mark = time.perf_counter()

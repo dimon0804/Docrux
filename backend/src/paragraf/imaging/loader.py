@@ -69,6 +69,28 @@ def load_page(data: bytes) -> Page:
     return _load_pdf(data) if kind == "pdf" else _load_image(data, kind)
 
 
+def load_pages(parts: list[bytes]) -> Page:
+    """Несколько файлов как страницы одного документа: справку часто снимают по листу."""
+    if not parts:
+        raise UnsupportedFile("Файл пустой.")
+    if len(parts) == 1:
+        return load_page(parts[0])
+    if sum(len(part) for part in parts) > MAX_BYTES:
+        raise UnsupportedFile("Файлы вместе больше 15 МБ.")
+    images: list[np.ndarray] = []
+    embedded: list[list[Line]] = []
+    kinds: list[str] = []
+    for part in parts:
+        page = load_page(part)
+        images.extend(page.images)
+        embedded.extend(page.embedded if page.embedded else [[] for _ in page.images])
+        kinds.append(page.kind)
+        if len(images) > MAX_PAGES:
+            raise UnsupportedFile(f"Страниц больше {MAX_PAGES}.")
+    kind = kinds[0] if len(set(kinds)) == 1 else "mixed"
+    return Page(images=images, kind=kind, embedded=embedded)
+
+
 def _load_image(data: bytes, kind: str) -> Page:
     try:
         with Image.open(io.BytesIO(data)) as raw:

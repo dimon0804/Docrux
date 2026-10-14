@@ -44,8 +44,8 @@ function Workspace() {
     if (state.phase !== "idle") window.scrollTo({ top: 0, behavior: "instant" });
   }, [state.phase]);
 
-  const choose = (file: File) => {
-    const problem = pick(file);
+  const choose = (file: File, more: File[] = []) => {
+    const problem = pick(file, more);
     if (problem) toast.error(problem);
   };
 
@@ -69,7 +69,10 @@ function Workspace() {
             <h1 className="text-2xl font-semibold tracking-[-0.02em] sm:text-[28px]">
               {state.analysis.document_title}
             </h1>
-            <p className="mt-1 text-sm text-muted">{state.file?.name}</p>
+            <p className="mt-1 text-sm text-muted">
+              {state.file?.name}
+              {state.more.length > 0 ? ` и ещё ${state.more.length} стр.` : ""}
+            </p>
           </div>
           <div className="no-print flex flex-wrap items-center gap-2">
             <button
@@ -221,7 +224,13 @@ function Workspace() {
         style={{ "--i": 3 } as React.CSSProperties}
         noValidate
       >
-        <Dropzone file={state.file} preview={state.preview} onPick={choose} />
+        <Dropzone
+          file={state.file}
+          preview={state.preview}
+          onPick={choose}
+          multiple
+          extraPages={state.more.length}
+        />
 
         <TypePicker docTypes={docTypes} value={state.docType} onChange={setDocType} />
 

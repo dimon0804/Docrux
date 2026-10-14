@@ -8,8 +8,11 @@ import {
   ask,
   type CheckResponse,
   checkFile,
+  MAX_FILE_MB,
   recheck,
 } from "./api";
+
+const MAX_PAGES = 10;
 
 export type Turn = {
   id: number;
@@ -23,6 +26,8 @@ export type Turn = {
 export type Workspace = {
   phase: "idle" | "reading" | "ready";
   file: File | null;
+  /** Остальные страницы, если документ снят несколькими фото. */
+  more: File[];
   preview: string | null;
   docType: string;
   analysis: Analysis | null;
@@ -36,7 +41,7 @@ export type Workspace = {
 };
 
 type Action =
-  | { type: "pick"; file: File; preview: string | null }
+  | { type: "pick"; file: File; more: File[]; preview: string | null }
   | { type: "type"; docType: string }
   | { type: "start" }
   | { type: "done"; analysis: Analysis; check: Answer; image: string; first: Turn | null }
@@ -50,6 +55,7 @@ type Action =
 const initial: Workspace = {
   phase: "idle",
   file: null,
+  more: [],
   preview: null,
   docType: "",
   analysis: null,
@@ -65,7 +71,13 @@ const initial: Workspace = {
 function reducer(state: Workspace, action: Action): Workspace {
   switch (action.type) {
     case "pick":
-      return { ...initial, docType: state.docType, file: action.file, preview: action.preview };
+      return {
+        ...initial,
+        docType: state.docType,
+        file: action.file,
+        more: action.more,
+        preview: action.preview,
+      };
     case "type":
       return { ...state, docType: action.docType };
     case "start":
@@ -152,14 +164,21 @@ export function useWorkspace() {
   );
 
   const pick = useCallback(
-    (file: File): string | null => {
-      const problem = checkFile(file);
-      if (problem) return problem;
+    (file: File, more: File[] = []): string | null => {
+      for (const part of [file, ...more]) {
+        const problem = checkFile(part);
+        if (problem) return more.length ? `${part.name}: ${problem}` : problem;
+      }
+      if (more.length + 1 > MAX_PAGES) return `Можно выбрать до ${MAX_PAGES} страниц.`;
+      const total = [file, ...more].reduce((sum, part) => sum + part.size, 0);
+      if (total > MAX_FILE_MB * 1024 * 1024) {
+        return `Файлы вместе больше ${MAX_FILE_MB} МБ. Сожмите снимки или выберите меньше страниц.`;
+      }
       controller.current?.abort();
       release();
       const isImage = file.type.startsWith("image/") || /\.(jpe?g|png)$/i.test(file.name);
       previewUrl.current = isImage ? URL.createObjectURL(file) : null;
-      dispatch({ type: "pick", file, preview: previewUrl.current });
+      dispatch({ type: "pick", file, more, preview: previewUrl.current });
       return null;
     },
     [release],
@@ -176,7 +195,7 @@ export function useWorkspace() {
       dispatch({ type: "start" });
       const asked = question.trim();
       try {
-        const result = await analyze(state.file, {
+        const result = await analyze(state.more.length ? [state.file, ...state.more] : state.file, {
           docType: state.docType || undefined,
           question: asked || undefined,
           signal: abort.signal,
@@ -196,7 +215,7 @@ export function useWorkspace() {
         dispatch({ type: "fail", error: message(error) });
       }
     },
-    [state.file, state.docType],
+    [state.file, state.more, state.docType],
   );
 
   const question = useCallback(
