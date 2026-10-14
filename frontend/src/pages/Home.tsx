@@ -8,6 +8,7 @@ import { DocumentViewer } from "@/components/DocumentViewer";
 import { Dropzone } from "@/components/Dropzone";
 import { FieldCard } from "@/components/FieldCard";
 import { HowItWorks } from "@/components/HowItWorks";
+import { Quality } from "@/components/Quality";
 import { ReadingState } from "@/components/ReadingState";
 import { RuleChecklist } from "@/components/RuleChecklist";
 import { RulesSection } from "@/components/RulesSection";
@@ -24,6 +25,7 @@ export function Home() {
     <ReferenceProvider>
       <Workspace />
       <HowItWorks />
+      <Quality />
       <RulesSection />
     </ReferenceProvider>
   );
