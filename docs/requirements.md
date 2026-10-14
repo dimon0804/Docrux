@@ -30,7 +30,7 @@
 | Бонус | Где реализовано | Чем проверено |
 | --- | --- | --- |
 | Автоопределение типа | `extraction/classify.py` | `test_api.py`, `test_freeform.py`; 42 из 42 на документах свободной формы |
-| Плохие снимки: наклон до 30°, тень, блик, низкое разрешение | `imaging/preprocess.py` | 630 испорченных снимков, таблица в README |
+| Плохие снимки: наклон до 30°, тень, блик, низкое разрешение | `imaging/preprocess.py` | 630 испорченных снимков, по всем трём метрикам 1.0; таблица в README |
 | Новый тип без кода | YAML в `config/doc_types` | `test_new_type_needs_only_a_config_file` |
 | Подсветка на снимке | рамки полей в ответе API, `DocumentViewer.tsx`; для пустого поля и отсутствующей отметки `hint_box` | `test_analyze_detects_type_and_returns_boxes`, `test_check.py` |
 | Ручная правка карточки и повторная проверка | `POST /api/check`, `api/cards.py` | `test_check.py` |
