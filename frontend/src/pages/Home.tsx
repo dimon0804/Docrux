@@ -11,6 +11,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { Quality } from "@/components/Quality";
 import { PhotoAdvice } from "@/components/PhotoAdvice";
 import { ReadingState } from "@/components/ReadingState";
+import { ReadingTrace } from "@/components/ReadingTrace";
 import { RuleChecklist } from "@/components/RuleChecklist";
 import { RulesSection } from "@/components/RulesSection";
 import { Samples } from "@/components/Samples";
@@ -165,6 +166,7 @@ function Workspace() {
               edited={state.edited}
             />
             <StudentReply analysis={state.analysis} check={state.check} />
+            <ReadingTrace analysis={state.analysis} />
             <details className="no-print card group">
               <summary className="flex list-none items-center justify-between gap-3 px-5 py-4 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
                 Распознанный текст

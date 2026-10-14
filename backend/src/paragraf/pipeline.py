@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -80,7 +81,10 @@ class Pipeline:
         Возвращает документ, склеенный снимок, общий текст и границы страниц
         в долях высоты. Рамки слов пересчитаны в координаты склеенного снимка.
         """
+        started = time.perf_counter()
         page = load_page(data)
+        loaded = time.perf_counter()
+        spent_prepare = spent_ocr = 0.0
         use_layer = self.settings.pdf_text_layer == "prefer" and page.has_text_layer
         prepared_pages: list[Prepared] = []
         results: list[OcrResult] = []
@@ -93,19 +97,33 @@ class Pipeline:
                     engine="pdf-text", lines=page.embedded[index], width=width, height=height
                 )
             else:
+                mark = time.perf_counter()
                 prepared = prepare(image)
+                spent_prepare += time.perf_counter() - mark
+                mark = time.perf_counter()
                 result = self.engine.recognize(prepared.gray)
+                spent_ocr += time.perf_counter() - mark
             prepared_pages.append(prepared)
             results.append(result)
         if len(prepared_pages) == 1:
-            return page, prepared_pages[0], results[0], []
-        return (page, *_stack(prepared_pages, results))
+            joined, ocr, breaks = prepared_pages[0], results[0], []
+        else:
+            joined, ocr, breaks = _stack(prepared_pages, results)
+        # Сколько занял каждый шаг: интерфейс показывает ход разбора.
+        joined.quality["ms_load"] = round((loaded - started) * 1000)
+        joined.quality["ms_prepare"] = round(spent_prepare * 1000)
+        joined.quality["ms_ocr"] = round(spent_ocr * 1000)
+        return page, joined, ocr, breaks
 
     def analyze(self, data: bytes, type_id: str | None = None) -> Processed:
         page, prepared, ocr, breaks = self.read(data)
 
+        mark = time.perf_counter()
         detected, confidence = detect_type(self.registry, ocr.lines)
         quality = dict(prepared.quality)
+        quality["ms_detect"] = round((time.perf_counter() - mark) * 1000)
+        quality["ocr_lines"] = len(ocr.lines)
+        quality["ocr_words"] = sum(len(line.words) for line in ocr.lines)
         if not quality.get("pdf_text"):
             quality.update(advice.text_stats(prepared.gray, ocr.lines))
         quality["file_kind"] = page.kind
@@ -136,7 +154,9 @@ class Pipeline:
             )
             return Processed(analysis=analysis, image=prepared.color)
 
+        mark = time.perf_counter()
         fields = self.extract(doc_type, ocr.lines, prepared.color)
+        quality["ms_extract"] = round((time.perf_counter() - mark) * 1000)
         analysis = Analysis(
             document_type=doc_type.id,
             document_title=doc_type.title,

@@ -120,3 +120,39 @@ describe("replyText", () => {
     expect(text).toContain("пункты 3.1, 3.2, 3.3 Положения");
   });
 });
+
+describe("traceSteps", () => {
+  it("describes each step of reading with its time", async () => {
+    const { traceSteps } = await import("@/components/ReadingTrace");
+    const steps = traceSteps({
+      document_title: "Справка об обучении",
+      supported: true,
+      type_detected: true,
+      fields: [
+        { key: "a", found: true },
+        { key: "b", found: false },
+      ],
+      validation: { status: "missing_fields", missing_fields: ["b"], sources: ["rule:3.3"] },
+      quality: {
+        file_kind: "jpeg",
+        pages: 1,
+        ocr_lines: 21,
+        ocr_words: 5,
+        ms_ocr: 900,
+        page_cropped: true,
+      },
+    } as unknown as Analysis);
+    expect(steps.map((step) => step.title)).toEqual([
+      "Файл принят",
+      "Снимок подготовлен",
+      "Текст распознан",
+      "Тип определён",
+      "Поля найдены",
+      "Сверено с Положением",
+    ]);
+    expect(steps[2]!.text).toBe("Tesseract нашёл 21 строку и 5 слов.");
+    expect(steps[2]!.ms).toBe(900);
+    expect(steps[4]!.text).toMatch(/^1 из 2\./);
+    expect(steps[5]!.text).toContain("п. 3.3");
+  });
+});
