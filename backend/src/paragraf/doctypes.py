@@ -51,6 +51,13 @@ class CompositeSpec(BaseModel):
     keys: list[str]
     aliases: list[str] = []
 
+    @model_validator(mode="after")
+    def _two_keys(self) -> CompositeSpec:
+        # Каждый вид составной метки делит строку ровно на два значения.
+        if len(self.keys) != 2:
+            raise ValueError(f"составная метка «{self.label}»: нужно ровно два ключа")
+        return self
+
     @property
     def labels(self) -> list[str]:
         return [self.label, *self.aliases]

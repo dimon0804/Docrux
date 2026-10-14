@@ -175,9 +175,19 @@ def format_report(
         if shown < len(lines):
             body += f"\n<i>…и ещё {len(lines) - shown}</i>"
         text = head + body + tail
-        if len(text) <= MESSAGE_LIMIT or shown == 0:
+        if len(text) <= MESSAGE_LIMIT:
             return text
+        if shown == 0:
+            break
         shown -= 1
+    # Даже без карточки не помещается: в названии или ответе много символов, которые
+    # при экранировании становятся длиннее. Отправляем короткую сводку без вопроса.
+    short = (
+        f"<b>{escape(_shorten(analysis.document_title, 80))}</b>\n\n"
+        f"{escape(_shorten(check.answer, 500))}\n\n"
+        "<i>Подробности не поместились в сообщение. Задайте вопрос отдельно.</i>"
+    )
+    return short[:MESSAGE_LIMIT]
 
 
 def suggestions(analysis: Analysis) -> list[str]:

@@ -250,3 +250,51 @@ def test_pdf_with_too_many_pages_is_rejected(client: TestClient):
     )
     assert response.status_code == 415
     assert "страниц" in response.json()["detail"]
+
+
+def test_rate_limiter_counts_ipv6_by_network_and_keeps_limits_when_full():
+    from paragraf.api.security import RateLimiter
+
+    limiter = RateLimiter(per_minute=1, max_clients=3)
+    assert limiter.allow("2001:db8::1", now=0)[0]
+    assert not limiter.allow("2001:db8::ffff", now=1)[0]
+    assert limiter.allow("10.0.0.9", now=2)[0]
+    for i in range(10):
+        limiter.allow(f"10.0.1.{i}", now=3)
+    # Заполненная таблица не сбрасывает того, кто упёрся в предел последним.
+    assert not limiter.allow("10.0.1.9", now=4)[0]
+
+
+def test_huge_pdf_pages_are_rendered_within_the_pixel_budget():
+    import pymupdf
+
+    from paragraf.imaging.loader import PDF_PAGE_PIXELS, UnsupportedFile, load_page
+
+    def pdf(pages: int, width: float, height: float) -> bytes:
+        document = pymupdf.open()
+        for _ in range(pages):
+            document.new_page(width=width, height=height).insert_text((72, 72), "Справка")
+        return document.tobytes()
+
+    # Огромные страницы отрисовываются с меньшим разрешением.
+    page = load_page(pdf(6, 1130, 1130))
+    assert all(image.shape[0] * image.shape[1] <= PDF_PAGE_PIXELS * 1.01 for image in page.images)
+    # Десять таких страниц не помещаются в общий бюджет: понятный отказ, а не нехватка памяти.
+    with pytest.raises(UnsupportedFile):
+        load_page(pdf(10, 1130, 1130))
+    # Десять обычных листов A4 по-прежнему читаются.
+    assert load_page(pdf(10, 595, 842)).pages == 10
+
+
+def test_busy_service_answers_503_instead_of_queueing(settings, pipeline, open_dir):
+    from fastapi.testclient import TestClient
+
+    from paragraf.api.app import MAX_WAITING, create_app
+
+    with TestClient(create_app(settings, pipeline)) as client:
+        client.app.state.ocr_waiting = MAX_WAITING
+        data = (open_dir / "documents" / "open-001.pdf").read_bytes()
+        response = client.post("/api/analyze", files={"file": ("a.pdf", data, "application/pdf")})
+        assert response.status_code == 503
+        assert response.json()["code"] == "busy"
+        assert response.headers["retry-after"]

@@ -16,6 +16,11 @@ MAX_BYTES = 15 * 1024 * 1024
 MAX_PIXELS = 50_000_000
 PDF_DPI = 200
 MAX_PAGES = 10
+PDF_PAGE_PIXELS = 5_000_000
+"""Предел одной страницы PDF. Лист A4 при 200 dpi занимает 3,9 млн точек и в него
+укладывается; страница огромного формата отрисовывается с меньшим разрешением."""
+PDF_TOTAL_PIXELS = 40_000_000
+"""Предел всех страниц вместе: склеенный снимок должен помещаться в память сервиса."""
 
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 
@@ -94,14 +99,15 @@ def _load_pdf(data: bytes) -> Page:
             raise UnsupportedFile("В PDF нет страниц.")
         if document.page_count > MAX_PAGES:
             raise UnsupportedFile(f"В PDF больше {MAX_PAGES} страниц.")
-        zoom = PDF_DPI / 72
         images: list[np.ndarray] = []
         embedded: list[list[Line]] = []
         total = 0.0
         for page in document:
             rect = page.rect
-            total += rect.width * rect.height * zoom * zoom
-            if total > MAX_PIXELS * 2:
+            area = max(rect.width * rect.height, 1.0)
+            zoom = min(PDF_DPI / 72, (PDF_PAGE_PIXELS / area) ** 0.5)
+            total += area * zoom * zoom
+            if total > PDF_TOTAL_PIXELS:
                 raise UnsupportedFile("Страницы PDF слишком большие.")
             pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
             image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(

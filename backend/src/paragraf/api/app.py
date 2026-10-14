@@ -40,7 +40,12 @@ from paragraf.settings import Settings, get_settings
 log = structlog.get_logger()
 
 PREVIEW_WIDTH = 1400
-MAX_PARALLEL_OCR = 2
+MAX_PARALLEL_OCR = 1
+"""Разборов одновременно в одном рабочем процессе. Процессов два, ядер у сервиса тоже два,
+а один большой документ занимает до гигабайта памяти."""
+MAX_WAITING = 6
+"""Сколько запросов может ждать распознавания. Остальным сразу отвечаем, что сервис занят,
+чтобы очередь и загруженные файлы не копились в памяти."""
 
 
 def create_app(settings: Settings | None = None, pipeline: Pipeline | None = None) -> FastAPI:
@@ -52,6 +57,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
     async def lifespan(app: FastAPI):
         app.state.pipeline = pipeline or Pipeline.default(settings)
         app.state.ocr_slots = asyncio.Semaphore(MAX_PARALLEL_OCR)
+        app.state.ocr_waiting = 0
         yield
 
     app = FastAPI(
@@ -91,6 +97,26 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
     def get_pipeline(request: Request) -> Pipeline:
         return request.app.state.pipeline
 
+    @asynccontextmanager
+    async def ocr_slot(request: Request):
+        """Место в очереди на распознавание; при длинной очереди сразу 503."""
+        state = request.app.state
+        if state.ocr_waiting >= MAX_WAITING:
+            raise HTTPException(
+                503,
+                "Сервис сейчас занят другими документами. Попробуйте через минуту.",
+                headers={"Retry-After": "20"},
+            )
+        state.ocr_waiting += 1
+        try:
+            await state.ocr_slots.acquire()
+        finally:
+            state.ocr_waiting -= 1
+        try:
+            yield
+        finally:
+            state.ocr_slots.release()
+
     Limited = Annotated[None, Depends(rate_limit)]
     Service = Annotated[Pipeline, Depends(get_pipeline)]
 
@@ -103,6 +129,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             415: "unsupported",
             422: "unprocessable",
             429: "rate_limited",
+            503: "busy",
         }
         body = Problem(detail=str(exc.detail), code=codes.get(exc.status_code, "error"))
         return JSONResponse(body.model_dump(), status_code=exc.status_code, headers=exc.headers)
@@ -171,7 +198,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
         if type_id and type_id not in service.registry:
             raise HTTPException(422, "Неизвестный тип документа.")
 
-        async with request.app.state.ocr_slots:
+        async with ocr_slot(request):
             try:
                 processed = await run_in_threadpool(service.analyze, data, type_id)
             except UnsupportedFile as exc:
@@ -245,13 +272,14 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
         if declared and declared.isdigit() and int(declared) > max_bytes + 64 * 1024:
             raise HTTPException(413, f"Файл больше {settings.max_upload_mb} МБ.")
         try:
-            doc_type = sandbox.parse(config)
+            # Разбор YAML в отдельном потоке: даже неудачное описание не держит цикл событий.
+            doc_type = await run_in_threadpool(sandbox.parse, config)
         except sandbox.SandboxError as exc:
             raise HTTPException(422, str(exc)) from exc
         data = await file.read(max_bytes + 1)
         if len(data) > max_bytes:
             raise HTTPException(413, f"Файл больше {settings.max_upload_mb} МБ.")
-        async with request.app.state.ocr_slots:
+        async with ocr_slot(request):
             try:
                 processed = await run_in_threadpool(sandbox.run, service, data, doc_type)
             except UnsupportedFile as exc:

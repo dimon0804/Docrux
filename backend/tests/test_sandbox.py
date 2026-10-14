@@ -117,3 +117,25 @@ def test_sandbox_endpoint(open_dir):
         )
         assert bad.status_code == 422
         assert "Якоря" in bad.json()["detail"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "[" * 7990,
+        "x: " + "9" * 7900,
+        "﻿&x a",
+        "a: !!python/object:os.system 'echo'",
+    ],
+)
+def test_hostile_yaml_is_rejected_cleanly(text: str):
+    with pytest.raises(sandbox.SandboxError):
+        sandbox.parse(text)
+
+
+def test_composite_needs_exactly_two_keys():
+    text = (
+        LEAVE + "composites:\n  - label: Номер и дата\n    kind: number_and_date\n    keys: [who]\n"
+    )
+    with pytest.raises(sandbox.SandboxError, match="Ошибка в описании"):
+        sandbox.parse(text)

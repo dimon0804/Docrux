@@ -57,8 +57,13 @@ function resultsJson(items: Item[]) {
   };
 }
 
-function csv(items: Item[]) {
-  const quote = (value: string) => `"${value.replace(/"/g, '""')}"`;
+export function csv(items: Item[]) {
+  // Ячейку, которая начинается с = + - @, Excel выполнил бы как формулу: текст с
+  // документа или имя файла приходят от студента, поэтому такие ячейки экранируем.
+  const quote = (value: string) => {
+    const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
   const rows = [["Файл", "Тип документа", "Итог", "Не хватает", "Основание"]];
   for (const { file, result, error } of items) {
     if (!result) {
@@ -132,8 +137,12 @@ export function Batch() {
           update(item.id, { state: "done", result });
           break;
         } catch (error) {
-          // Сервис ограничивает частоту запросов: ждём столько, сколько он попросил.
-          if (error instanceof ApiError && error.status === 429 && attempt < 5) {
+          // Сервис ограничивает частоту запросов или занят: ждём столько, сколько он попросил.
+          if (
+            error instanceof ApiError &&
+            (error.status === 429 || error.status === 503) &&
+            attempt < 5
+          ) {
             await wait((error.retryAfter ?? 10) * 1000);
             continue;
           }

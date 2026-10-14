@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import time
 import uuid
 from collections import defaultdict, deque
@@ -62,6 +63,7 @@ class RateLimiter:
     def allow(self, client: str, now: float | None = None) -> tuple[bool, int]:
         """Возвращает разрешение и число секунд до следующей попытки."""
         now = time.monotonic() if now is None else now
+        client = _network(client)
         if len(self._hits) > self.max_clients:
             self._evict(now)
         hits = self._hits[client]
@@ -79,4 +81,18 @@ class RateLimiter:
         for key in stale:
             del self._hits[key]
         if len(self._hits) > self.max_clients:
-            self._hits.clear()
+            # Полный сброс обнулил бы и тех, кто уже упёрся в предел. Убираем самых давних.
+            oldest = sorted(self._hits, key=lambda key: self._hits[key][-1])
+            for key in oldest[: len(self._hits) - self.max_clients]:
+                del self._hits[key]
+
+
+def _network(client: str) -> str:
+    """Адрес IPv6 считаем по сети /64: у одного абонента их обычно миллиарды."""
+    try:
+        address = ipaddress.ip_address(client)
+    except ValueError:
+        return client
+    if address.version == 6:
+        return str(ipaddress.ip_network(f"{address}/64", strict=False))
+    return client

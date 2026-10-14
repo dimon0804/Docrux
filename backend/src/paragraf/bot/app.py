@@ -71,6 +71,9 @@ def types_keyboard(pipeline: Pipeline, state: ChatState) -> InlineKeyboardMarkup
 
 def build_router(pipeline: Pipeline, settings: Settings) -> Router:
     router = Router(name="paragraf")
+    # Только личные чаты: в группах бот не нужен, а лимиты там проще обойти.
+    router.message.filter(F.chat.type == "private")
+    router.callback_query.filter(F.message.chat.type == "private")
     store = ChatStore(settings.bot_memory_minutes * 60, settings.bot_max_chats)
     files = RateLimiter(settings.bot_files_per_minute, max_clients=settings.bot_max_chats)
     messages = RateLimiter(settings.bot_messages_per_minute, max_clients=settings.bot_max_chats)
@@ -78,8 +81,9 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
     max_bytes = settings.max_upload_mb * 1024 * 1024
     help_text = logic.help_text(settings.max_upload_mb, settings.bot_memory_minutes)
 
-    def allowed(limiter: RateLimiter, chat_id: int) -> tuple[bool, str]:
-        ok, retry_after = limiter.allow(str(chat_id))
+    def allowed(limiter: RateLimiter, user_id: int) -> tuple[bool, str]:
+        # Считаем по человеку, а не по чату: иначе лимит обходится созданием новых групп.
+        ok, retry_after = limiter.allow(str(user_id))
         return ok, logic.TOO_OFTEN.format(seconds=retry_after)
 
     async def process(
@@ -87,11 +91,12 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
     ) -> None:
         async with ChatActionSender.typing(chat_id=chat_id, bot=bot):
             try:
-                buffer = await bot.download(file_id)
-                data = buffer.read() if buffer else b""
-                if len(data) > max_bytes:
-                    raise UnsupportedFile(f"Файл больше {settings.max_upload_mb} МБ.")
+                # Файл скачиваем, только когда подошла очередь: ожидающие не держат его в памяти.
                 async with slots:
+                    buffer = await bot.download(file_id)
+                    data = buffer.read() if buffer else b""
+                    if len(data) > max_bytes:
+                        raise UnsupportedFile(f"Файл больше {settings.max_upload_mb} МБ.")
                     processed = await asyncio.to_thread(pipeline.analyze, data, type_id)
                 analysis = processed.analysis
                 check = await asyncio.to_thread(pipeline.check, analysis)
@@ -113,11 +118,16 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
                 return
 
         state = store.put(chat_id, analysis, file_id)
-        await bot.send_message(
-            chat_id,
-            logic.format_report(analysis, check, question or None, answer),
-            reply_markup=report_keyboard(state),
-        )
+        try:
+            await bot.send_message(
+                chat_id,
+                logic.format_report(analysis, check, question or None, answer),
+                reply_markup=report_keyboard(state),
+            )
+        except TelegramAPIError as exc:
+            log.warning("bot_reply_failed", error=type(exc).__name__)
+            await bot.send_message(chat_id, logic.FAILED)
+            return
         log.info(
             "bot_document_analyzed",
             document_type=analysis.document_type,
@@ -156,7 +166,7 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
         if problem:
             await message.answer(escape(problem))
             return
-        ok, why = allowed(files, chat_id)
+        ok, why = allowed(files, message.from_user.id if message.from_user else chat_id)
         if not ok:
             await message.answer(escape(why))
             return
@@ -176,7 +186,7 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
         question = logic.clean_question(text)
         if not question:
             return
-        ok, why = allowed(messages, chat_id)
+        ok, why = allowed(messages, message.from_user.id if message.from_user else chat_id)
         if not ok:
             await message.answer(escape(why))
             return
@@ -202,7 +212,7 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
             if not 0 <= index < len(options):
                 await query.answer(logic.STALE_BUTTON, show_alert=True)
                 return
-            ok, why = allowed(messages, chat_id)
+            ok, why = allowed(messages, query.from_user.id)
             await query.answer(None if ok else why, show_alert=not ok)
             if ok:
                 async with ChatActionSender.typing(chat_id=chat_id, bot=bot):
@@ -219,7 +229,7 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
         if pressed.arg not in pipeline.registry:
             await query.answer(logic.STALE_BUTTON, show_alert=True)
             return
-        ok, why = allowed(files, chat_id)
+        ok, why = allowed(files, query.from_user.id)
         await query.answer("Разбираю заново…" if ok else why, show_alert=not ok)
         if ok:
             await process(bot, chat_id, state.file_id, pressed.arg, "")

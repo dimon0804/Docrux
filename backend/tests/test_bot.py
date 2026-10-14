@@ -232,3 +232,13 @@ def test_keyboards_fit_telegram_limits(pipeline: Pipeline, open_dir: Path, setti
         "internship_certificate",
     }
     assert app.build_router(pipeline, settings) is not None
+
+
+def test_reply_stays_within_limit_when_escaping_inflates_it(pipeline: Pipeline):
+    analysis = _other([FieldValue(key="g", label="Строка", type="text", value="ok", found=True)])
+    analysis = analysis.model_copy(update={"document_title": "&<" * 60})
+    question = "&" * 500
+    answer = pipeline.ask(analysis, question, True)
+    answer = answer.model_copy(update={"answer": "&<>" * 700})
+    text = logic.format_report(analysis, pipeline.check(analysis), question, answer)
+    assert len(text) <= logic.MESSAGE_LIMIT
