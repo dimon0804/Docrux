@@ -35,6 +35,24 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 - Reads PDF files up to 10 pages.
 - Tells what the uploaded document is and answers questions about the regulations by quoting the right clause.
 
+**For the dean's office**
+
+- A rule-by-rule check: every clause shows the items it requires and which of them were found.
+- An empty field is outlined on the picture where its value should have been.
+- The card can be corrected by hand: the value is normalized, the check is redone at once and the field is marked as edited.
+- A ready reply to the student listing what is missing with the clauses, copied in one click.
+- A printable check sheet (or PDF) and a JSON export in the results.json format.
+- Batch checking: up to 60 files at once, a result for each, a combined results.json and a CSV for Excel.
+- A type sandbox: describe a new document type in the browser and try it on a file right away; the service's own types stay untouched.
+
+**For the student**
+
+- Take a photo with the phone camera right from the page or paste a picture with Ctrl+V.
+- If the photo is blurred, too small, shaded or tilted, the service says how to retake it.
+- Compare the uploaded photo with the aligned sheet and see what was fixed before reading.
+- Search the regulations with highlighted matches.
+- The service installs on a phone like an app, and there is a Telegram bot with the same abilities.
+
 ## Quick start
 
 Docker is the only requirement.
@@ -127,6 +145,8 @@ fields:
 
 After a restart the type appears in the interface, in type detection and in answers. The regulations live in `config/rules.md`.
 
+A description can also be tried without restarting anything: the "Новый тип" page (`/sandbox`) takes it in an editor and applies it to the uploaded file for that one request. Since the description comes from a visitor, the sandbox turns off phrase patterns and choice maps (both are regular expressions), forbids YAML anchors and limits the size and the number of fields.
+
 ## Questions in the student's own words
 
 The regulations say "the maximum length of the leave is not set", while a student asks "how long can I be away?". Short phrases from such questions are tied to clause numbers in `config/rules_hints.yaml`. The answer is always a verbatim quote of the clause.
@@ -211,6 +231,13 @@ npm run dev
 ```
 
 Local recognition needs Tesseract with the Russian language. Tests read the PDF text layer of the open set, so they pass without it.
+
+The API description is served at `/api/docs`. Main endpoints:
+
+- `POST /api/analyze` — a file and an optional question; returns the card, the completeness check, photo tips (`analysis.advice`) and the aligned picture. An empty field whose label was found has a `hint_box` where the value should have been.
+- `POST /api/ask` — a follow-up question about a card that was already read; no file needed.
+- `POST /api/check` — a card corrected by hand: values are normalized and completeness is checked again.
+- `POST /api/sandbox` — a file and a type description in YAML; reads the file by that description without touching the service's types. `GET /api/sandbox/example` returns a sample description.
 
 ## Limitations
 
