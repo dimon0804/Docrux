@@ -27,7 +27,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/pyproject.toml
       - name: Install
-        run: pip install -e ".[dev]" pip-audit
+        run: pip install -e ".[dev,bot]" pip-audit
       - name: Lint
         run: |
           ruff check src tests
