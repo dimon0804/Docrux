@@ -12,6 +12,7 @@ import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
 import { Privacy } from "./pages/Privacy";
 import { Sandbox } from "./pages/Sandbox";
+import { SelfCheck } from "./pages/SelfCheck";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -38,6 +39,7 @@ export function App() {
           <Route path="/" component={Home} />
           <Route path="/batch" component={Batch} />
           <Route path="/sandbox" component={Sandbox} />
+          <Route path="/selfcheck" component={SelfCheck} />
           <Route path="/privacy" component={Privacy} />
           <Route path="/cookies" component={Cookies} />
           <Route component={NotFound} />

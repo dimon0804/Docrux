@@ -53,8 +53,11 @@ RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /opt/venv /opt/venv
 COPY config /app/config
+# Открытый набор организаторов для самопроверки из интерфейса (около 6 МБ).
+COPY data/open /app/data/open
 ENV PATH="/opt/venv/bin:$PATH" \
     PARAGRAF_CONFIG_DIR=/app/config \
+    PARAGRAF_OPEN_SET_DIR=/app/data/open \
     PARAGRAF_TESSDATA=/usr/share/tessdata_best \
     OMP_THREAD_LIMIT=1 \
     TMPDIR=/tmp

@@ -6,6 +6,7 @@
 
 import asyncio
 import base64
+import json
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -14,10 +15,10 @@ import structlog
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
-from paragraf import __version__, sandbox
+from paragraf import __version__, sandbox, selfcheck
 from paragraf.api import cards
 from paragraf.api.schemas import (
     AnalyzeResponse,
@@ -60,6 +61,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
         app.state.pipeline = pipeline or Pipeline.default(settings)
         app.state.ocr_slots = asyncio.Semaphore(MAX_PARALLEL_OCR)
         app.state.ocr_waiting = 0
+        app.state.selfcheck_running = False
         yield
 
     app = FastAPI(
@@ -130,6 +132,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             413: "too_large",
             415: "unsupported",
             422: "unprocessable",
+            409: "conflict",
             429: "rate_limited",
             503: "busy",
         }
@@ -256,6 +259,45 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             validation=analysis.validation,
             check=service.check(analysis),
             remarks=analysis.remarks,
+        )
+
+    @app.get("/api/selfcheck/available")
+    async def selfcheck_available() -> dict[str, bool]:
+        return {"available": selfcheck.available(settings.open_set_dir)}
+
+    @app.get("/api/selfcheck")
+    async def run_selfcheck(request: Request, _: Limited, service: Service) -> StreamingResponse:
+        """Прогон открытого набора с событиями по мере чтения документов (SSE)."""
+        if not selfcheck.available(settings.open_set_dir):
+            raise HTTPException(404, "Открытый набор не найден.")
+        state = request.app.state
+        if state.selfcheck_running:
+            raise HTTPException(409, "Самопроверка уже идёт. Подождите, пока она закончится.")
+        state.selfcheck_running = True
+        events = selfcheck.run(service, settings.open_set_dir)
+
+        def advance():
+            return next(events, None)
+
+        async def stream():
+            try:
+                while True:
+                    # Каждый документ занимает место в общей очереди распознавания,
+                    # чтобы самопроверка не мешала тем, кто проверяет свой документ.
+                    async with state.ocr_slots:
+                        event = await run_in_threadpool(advance)
+                    if event is None:
+                        break
+                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                    if await request.is_disconnected():
+                        break
+            finally:
+                state.selfcheck_running = False
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
     @app.get("/api/sandbox/example")

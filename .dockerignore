@@ -11,6 +11,8 @@
 .claude
 .agents
 data
+!data/open
+data/open/__pycache__
 docs
 tools
 notebooks

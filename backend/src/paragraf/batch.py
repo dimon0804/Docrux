@@ -59,6 +59,31 @@ def _analyze(
     raise ValueError(f"{document_id}: документ не прочитан, а тип в манифесте не указан")
 
 
+def document_record(
+    pipeline: Pipeline, document_id: str, analysis: Analysis, questions: list[dict[str, str]]
+) -> dict[str, Any]:
+    """Запись одного документа в формате results.json: карточка, проверка, ответы."""
+    answers = []
+    for item in questions:
+        answer = pipeline.ask(analysis, item["question"])
+        answers.append(
+            {
+                "question_id": item["question_id"],
+                "answerable": answer.answerable,
+                "value": answer.value,
+                "answer": answer.answer,
+                "sources": answer.sources,
+            }
+        )
+    return {
+        "document_id": document_id,
+        "document_type": analysis.document_type,
+        "fields": analysis.card(),
+        "validation": analysis.validation.model_dump(),
+        "answers": answers,
+    }
+
+
 def run_batch(
     pipeline: Pipeline,
     manifest: Path,
@@ -78,26 +103,8 @@ def run_batch(
     for entry in load_manifest(manifest):
         document_id = entry["document_id"]
         analysis = _analyze(pipeline, root, entry, source, problems)
-        answers = []
-        for item in asked.get(document_id, []):
-            answer = pipeline.ask(analysis, item["question"])
-            answers.append(
-                {
-                    "question_id": item["question_id"],
-                    "answerable": answer.answerable,
-                    "value": answer.value,
-                    "answer": answer.answer,
-                    "sources": answer.sources,
-                }
-            )
         documents.append(
-            {
-                "document_id": document_id,
-                "document_type": analysis.document_type,
-                "fields": analysis.card(),
-                "validation": analysis.validation.model_dump(),
-                "answers": answers,
-            }
+            document_record(pipeline, document_id, analysis, asked.get(document_id, []))
         )
         if progress:
             progress(document_id)

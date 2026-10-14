@@ -78,7 +78,8 @@ A five-minute tour:
 2. Ask "Какой размер стипендии положен студенту?" (the scholarship amount). Neither the document nor the regulations say it, and the service tells you so.
 3. Ask in plain words: "На сколько можно уйти в академ?". The answer quotes clause 4.4.
 4. Open "Пакетная проверка", load a few files from `data/open/documents` and download results.json.
-5. Open "Новый тип", press "Взять пример протокола" and "Разобрать по описанию": a protocol, which is not one of the service's types, is read by the description in the editor.
+5. At the bottom of the page open "Самопроверка на открытом наборе": the service reads the organizers' 30 documents in front of you, answers 120 questions and shows the metrics of `evaluate.py`.
+6. Open "Новый тип", press "Взять пример протокола" and "Разобрать по описанию": a protocol, which is not one of the service's types, is read by the description in the editor.
 
 ## Running in Google Colab
 
@@ -254,6 +255,7 @@ The API description is served at `/api/docs`. Main endpoints:
 - `POST /api/analyze` — a file (or several files as pages of one document) and an optional question; returns the card, the completeness check, photo tips (`analysis.advice`) and the aligned picture. An empty field whose label was found has a `hint_box` where the value should have been.
 - `POST /api/ask` — a follow-up question about a card that was already read; no file needed.
 - `POST /api/check` — a card corrected by hand: values are normalized and completeness is checked again.
+- `GET /api/selfcheck` — a self-check on the open set: a stream of events (SSE) per document and the final `evaluate.py` metrics.
 - `POST /api/sandbox` — a file and a type description in YAML; reads the file by that description without touching the service's types. `GET /api/sandbox/example` returns a sample description.
 
 ## Limitations

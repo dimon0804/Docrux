@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 from pathlib import Path
 
 import pytest
@@ -329,3 +330,23 @@ def test_too_many_files_are_rejected(client, open_dir):
     files = [("file", (f"p{i}.pdf", data, "application/pdf")) for i in range(11)]
     response = client.post("/api/analyze", files=files)
     assert response.status_code == 422
+
+
+def test_selfcheck_streams_every_document_and_the_organizers_metrics(client):
+    assert client.get("/api/selfcheck/available").json() == {"available": True}
+    with client.stream("GET", "/api/selfcheck") as response:
+        assert response.headers["content-type"].startswith("text/event-stream")
+        events = [
+            json.loads(line[len("data: ") :])
+            for line in response.iter_lines()
+            if line.startswith("data: ")
+        ]
+    assert events[0] == {"type": "start", "documents": 30}
+    documents = [event for event in events if event["type"] == "document"]
+    assert len(documents) == 30
+    assert all(event["type_ok"] and event["validation_ok"] for event in documents)
+    done = events[-1]
+    assert done["type"] == "done"
+    assert done["questions"] == 120
+    assert done["field_accuracy_macro"] == 1.0
+    assert done["question_exact_match"] == 1.0

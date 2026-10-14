@@ -1,3 +1,6 @@
+import { Play } from "lucide-react";
+import { Link } from "wouter";
+
 /**
  * Цифры из README, раздел «Качество». Все получены распознаванием изображений
  * скриптами из репозитория; при новом замере обновляются здесь и в README.
@@ -38,6 +41,13 @@ export function Quality() {
         Качество мерили скриптом организаторов после каждого изменения. В наших тестах на вопросы,
         ответа на которые нет ни в документе, ни в Положении, сервис ни разу не ответил выдумкой.
       </p>
+      <Link
+        href="/selfcheck"
+        className="pressable mt-5 inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold hover:border-line-strong"
+      >
+        <Play aria-hidden="true" className="size-4 text-brand-text" />
+        Проверить сейчас на открытом наборе
+      </Link>
       <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {TILES.map((tile) => (
           <li key={tile.label} className="card flex flex-col p-6">

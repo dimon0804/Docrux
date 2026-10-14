@@ -20,6 +20,9 @@ export function Footer() {
           <Link href="/batch" className="text-text-2 transition-colors hover:text-brand-text">
             Пакетная проверка
           </Link>
+          <Link href="/selfcheck" className="text-text-2 transition-colors hover:text-brand-text">
+            Самопроверка на открытом наборе
+          </Link>
           <Link href="/sandbox" className="text-text-2 transition-colors hover:text-brand-text">
             Песочница типов документов
           </Link>

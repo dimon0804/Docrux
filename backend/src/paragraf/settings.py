@@ -19,10 +19,22 @@ def _default_config_dir() -> Path:
     return Path("config")
 
 
+def _default_open_set_dir() -> Path | None:
+    """Открытый набор организаторов: в образе /app/data/open, при разработке data/open."""
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        candidate = parent / "data" / "open"
+        if (candidate / "documents.json").is_file():
+            return candidate
+    return None
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PARAGRAF_", env_file=".env", extra="ignore")
 
     config_dir: Path = _default_config_dir()
+    open_set_dir: Path | None = _default_open_set_dir()
+    """Открытый набор для самопроверки из интерфейса. Если не найден, кнопка скрыта."""
     ocr_lang: str = "rus"
     ocr_psm: int = 6
     tessdata: str | None = None
