@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 
-import { analyze, type Analysis, type Answer, ApiError, ask, checkFile } from "./api";
+import {
+  analyze,
+  type Analysis,
+  type Answer,
+  ApiError,
+  ask,
+  type CheckResponse,
+  checkFile,
+  recheck,
+} from "./api";
 
 export type Turn = {
   id: number;
@@ -21,6 +30,7 @@ export type Workspace = {
   asking: boolean;
   error: string | null;
   focus: string[];
+  edited: string[];
 };
 
 type Action =
@@ -32,6 +42,7 @@ type Action =
   | { type: "ask"; turn: Turn }
   | { type: "answer"; id: number; answer: Answer | null; error: string | null }
   | { type: "focus"; keys: string[] }
+  | { type: "edited"; key: string; result: CheckResponse }
   | { type: "reset" };
 
 const initial: Workspace = {
@@ -46,6 +57,7 @@ const initial: Workspace = {
   asking: false,
   error: null,
   focus: [],
+  edited: [],
 };
 
 function reducer(state: Workspace, action: Action): Workspace {
@@ -81,6 +93,30 @@ function reducer(state: Workspace, action: Action): Workspace {
       };
     case "focus":
       return { ...state, focus: action.keys };
+    case "edited": {
+      if (!state.analysis) return state;
+      // Рамки на снимке остаются от распознавания, значение и проверка приходят с сервера.
+      const fresh = new Map(action.result.fields.map((field) => [field.key, field]));
+      const fields = state.analysis.fields.map((field) => {
+        const next = fresh.get(field.key);
+        if (!next) return field;
+        const changed = field.key === action.key;
+        return {
+          ...field,
+          value: next.value,
+          found: next.found,
+          box: changed ? null : field.box,
+          confidence: changed ? null : field.confidence,
+          handwritten: changed ? false : field.handwritten,
+        };
+      });
+      return {
+        ...state,
+        analysis: { ...state.analysis, fields, validation: action.result.validation },
+        check: action.result.check,
+        edited: state.edited.includes(action.key) ? state.edited : [...state.edited, action.key],
+      };
+    }
     case "reset":
       return { ...initial, docType: state.docType };
   }
@@ -176,11 +212,30 @@ export function useWorkspace() {
 
   const focus = useCallback((keys: string[]) => dispatch({ type: "focus", keys }), []);
 
+  /** Значение поля поправили вручную: сервер приводит его к формату и перепроверяет документ. */
+  const edit = useCallback(
+    async (key: string, value: string | boolean): Promise<string | null> => {
+      if (!state.analysis) return null;
+      try {
+        const result = await recheck(state.analysis, [{ key, value }]);
+        dispatch({ type: "edited", key, result });
+        const field = result.fields.find((item) => item.key === key);
+        if (typeof value === "string" && value.trim() && field && !field.found) {
+          return "Значение не похоже на ожидаемое для этого поля. Проверьте формат.";
+        }
+        return null;
+      } catch (error) {
+        return message(error);
+      }
+    },
+    [state.analysis],
+  );
+
   const reset = useCallback(() => {
     controller.current?.abort();
     release();
     dispatch({ type: "reset" });
   }, [release]);
 
-  return { state, pick, setDocType, read, question, focus, reset };
+  return { state, pick, setDocType, read, question, focus, edit, reset };
 }

@@ -8,6 +8,7 @@ export type FieldValue = {
   found: boolean;
   raw: string | null;
   box: Box | null;
+  hint_box?: Box | null;
   confidence: number | null;
   handwritten?: boolean;
   guess?: string | null;
@@ -42,6 +43,7 @@ export type Analysis = {
   fields: FieldValue[];
   validation: Validation;
   quality: Record<string, number | string | boolean>;
+  advice?: string[];
   page_breaks: number[];
   width: number;
   height: number;
@@ -135,6 +137,29 @@ export function ask(analysis: Analysis, question: string, signal?: AbortSignal) 
       document_title: analysis.document_title,
       question,
       fields: analysis.fields.map(({ key, value, found, label }) => ({ key, value, found, label })),
+    }),
+  });
+}
+
+export type CheckResponse = { fields: FieldValue[]; validation: Validation; check: Answer };
+
+/** Перепроверка карточки, которую поправили вручную: сервер приводит значения к формату. */
+export function recheck(analysis: Analysis, fields: { key: string; value: string | boolean }[]) {
+  const edited = new Map(fields.map((field) => [field.key, field.value]));
+  return request<CheckResponse>("/api/check", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      document_type: analysis.document_type,
+      fields: analysis.fields.map(({ key, value, found, label }) => {
+        const next = edited.has(key) ? edited.get(key)! : value;
+        return {
+          key,
+          value: next,
+          found: edited.has(key) ? next !== "" && next !== false : found,
+          label,
+        };
+      }),
     }),
   });
 }

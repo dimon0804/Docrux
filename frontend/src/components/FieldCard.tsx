@@ -1,4 +1,5 @@
-import { Check, Minus } from "lucide-react";
+import { Check, LoaderCircle, Minus, Pencil } from "lucide-react";
+import { type FormEvent, useState } from "react";
 
 import type { Analysis, FieldValue } from "@/lib/api";
 
@@ -7,11 +8,127 @@ type Props = {
   title?: string;
   focus: string[];
   onSelect: (key: string) => void;
+  /** Ручная правка значения. Возвращает текст ошибки или null. */
+  onEdit?: (key: string, value: string | boolean) => Promise<string | null>;
+  edited?: string[];
 };
 
+const PLACEHOLDER: Record<string, string> = {
+  date: "Например: 01.09.2026",
+  person: "Фамилия Имя Отчество",
+  integer: "Число",
+  code: "Например: ОБ-1234",
+  text: "Значение с документа",
+};
+
+function EditRow({
+  field,
+  onSave,
+  onCancel,
+}: {
+  field: FieldValue;
+  onSave: (value: string | boolean) => Promise<string | null>;
+  onCancel: () => void;
+}) {
+  const mark = field.type === "mark";
+  const [draft, setDraft] = useState<string | boolean>(
+    mark ? field.found : field.found ? String(field.value) : "",
+  );
+  const [saving, setSaving] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    const error = await onSave(draft);
+    setSaving(false);
+    if (error) setProblem(error);
+    else onCancel();
+  };
+
+  return (
+    <form onSubmit={submit} className="bg-surface-2/60 px-5 py-3.5">
+      <label htmlFor={`edit-${field.key}`} className="text-[13px] text-muted">
+        {field.label}
+      </label>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        {mark ? (
+          <div
+            role="radiogroup"
+            aria-label={field.label}
+            className="flex gap-1 rounded-xl bg-surface-3 p-1"
+          >
+            {[
+              { value: true, label: "Есть" },
+              { value: false, label: "Нет" },
+            ].map((option) => (
+              <button
+                key={option.label}
+                id={option.value ? `edit-${field.key}` : undefined}
+                type="button"
+                role="radio"
+                aria-checked={draft === option.value}
+                onClick={() => setDraft(option.value)}
+                className={`pressable rounded-lg px-4 py-1.5 text-sm font-medium ${
+                  draft === option.value ? "bg-surface text-text shadow-sm" : "text-text-2"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <input
+            id={`edit-${field.key}`}
+            autoFocus
+            value={String(draft)}
+            onChange={(event) => setDraft(event.target.value.slice(0, 300))}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") onCancel();
+            }}
+            placeholder={PLACEHOLDER[field.type] ?? PLACEHOLDER.text}
+            autoComplete="off"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] outline-none focus:border-brand focus:shadow-[0_0_0_4px_rgb(80_184_72/0.16)]"
+          />
+        )}
+        <button
+          type="submit"
+          disabled={saving}
+          className="pressable inline-flex h-10 items-center gap-1.5 rounded-xl bg-brand-strong px-4 text-sm font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-60"
+        >
+          {saving && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
+          Сохранить
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="pressable h-10 rounded-xl px-3 text-sm font-medium text-text-2 hover:text-text"
+        >
+          Отмена
+        </button>
+      </div>
+      {problem && (
+        <p role="alert" className="mt-2 text-[13px] text-danger">
+          {problem}
+        </p>
+      )}
+    </form>
+  );
+}
+
 const MONTHS = [
-  "января", "февраля", "марта", "апреля", "мая", "июня",
-  "июля", "августа", "сентября", "октября", "ноября", "декабря",
+  "января",
+  "февраля",
+  "марта",
+  "апреля",
+  "мая",
+  "июня",
+  "июля",
+  "августа",
+  "сентября",
+  "октября",
+  "ноября",
+  "декабря",
 ];
 
 function humanDate(iso: string) {
@@ -36,13 +153,16 @@ function unsure(field: FieldValue) {
 
 function shown(field: FieldValue): string {
   if (field.type === "mark") return field.found ? "Есть" : "Не найдена";
-  if (!field.found) return field.handwritten ? "Заполнено от руки, прочитать надёжно не удалось" : "Не найдено";
+  if (!field.found)
+    return field.handwritten ? "Заполнено от руки, прочитать надёжно не удалось" : "Не найдено";
   const value = String(field.value);
   return field.type === "date" ? humanDate(value) : value;
 }
 
 /** Карточка полей документа. */
-export function FieldCard({ analysis, title, onSelect, focus }: Props) {
+export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [] }: Props) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const editable = Boolean(onEdit) && analysis.supported;
   const found = analysis.fields.filter((field) => field.found).length;
   return (
     <section aria-labelledby="card-title" className="card overflow-hidden">
@@ -63,17 +183,39 @@ export function FieldCard({ analysis, title, onSelect, focus }: Props) {
       <dl className="border-t border-line">
         {analysis.fields.map((field, index) => {
           const active = focus.includes(field.key);
+          if (editing === field.key && onEdit) {
+            return (
+              <div key={field.key} className="border-b border-line last:border-b-0">
+                <EditRow
+                  field={field}
+                  onSave={(value) => onEdit(field.key, value)}
+                  onCancel={() => setEditing(null)}
+                />
+              </div>
+            );
+          }
           return (
             <div
               key={field.key}
-              className="rise border-b border-line last:border-b-0"
+              className="rise group/row relative border-b border-line last:border-b-0"
               style={{ "--i": index } as React.CSSProperties}
             >
+              {editable && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(field.key)}
+                  aria-label={`Исправить поле «${field.label}»`}
+                  title="Исправить вручную"
+                  className="no-print pressable absolute right-3 top-2 z-[1] grid size-8 place-items-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-surface-3 hover:text-text focus-visible:opacity-100 group-hover/row:opacity-100 [@media(pointer:coarse)]:opacity-100"
+                >
+                  <Pencil aria-hidden="true" className="size-3.5" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => onSelect(field.key)}
                 aria-pressed={active}
-                className={`group grid w-full grid-cols-[auto_1fr] items-start gap-x-3 px-5 py-3 text-left transition-colors duration-150 sm:grid-cols-[auto_minmax(0,11rem)_1fr] ${
+                className={`group grid w-full grid-cols-[auto_1fr] items-start gap-x-3 px-5 py-3 text-left ${editable ? "pr-12" : ""} transition-colors duration-150 sm:grid-cols-[auto_minmax(0,11rem)_1fr] ${
                   active ? "bg-brand-softer" : "hover:bg-surface-2/70"
                 }`}
               >
@@ -83,7 +225,11 @@ export function FieldCard({ analysis, title, onSelect, focus }: Props) {
                     field.found ? "bg-brand-soft text-brand-text" : "bg-warn-soft text-warn"
                   }`}
                 >
-                  {field.found ? <Check className="size-3.5" strokeWidth={3} /> : <Minus className="size-3.5" strokeWidth={3} />}
+                  {field.found ? (
+                    <Check className="size-3.5" strokeWidth={3} />
+                  ) : (
+                    <Minus className="size-3.5" strokeWidth={3} />
+                  )}
                 </span>
                 <dt className="text-[13px] leading-5 text-muted sm:pt-px">{field.label}</dt>
                 <dd
@@ -102,7 +248,12 @@ export function FieldCard({ analysis, title, onSelect, focus }: Props) {
                       Возможно: {field.guess}. Проверьте по снимку.
                     </span>
                   )}
-                  {unsure(field) && (
+                  {edited.includes(field.key) && (
+                    <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[11px] font-medium text-muted">
+                      исправлено вручную
+                    </span>
+                  )}
+                  {unsure(field) && !edited.includes(field.key) && (
                     <span
                       title="Буквы распознаны неуверенно. Сверьте значение со снимком."
                       className="ml-2 rounded-full bg-warn-soft px-2 py-0.5 align-middle text-[11px] font-medium text-warn"

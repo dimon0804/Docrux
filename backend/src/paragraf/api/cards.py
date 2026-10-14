@@ -24,6 +24,9 @@ def clean_value(spec: FieldSpec, value: str) -> str | None:
     value = value.strip()[:MAX_VALUE]
     if not value or textnorm.compare_key(value) == NOT_FOUND:
         return None
+    # «???» или «---» — не значение: без единой буквы или цифры поле считается пустым.
+    if not any(char.isalnum() for char in value):
+        return None
     cleaned = normalize(spec, textnorm.apply_choices(value, spec.choices))
     if cleaned is not None and spec.type == "person":
         cleaned = textnorm.to_nominative(cleaned)

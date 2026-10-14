@@ -158,3 +158,12 @@ def test_check_is_rate_limited(settings: Settings, pipeline: Pipeline):
         body = {"document_type": "study_certificate", "fields": []}
         codes = [limited.post("/api/check", json=body).status_code for _ in range(2)]
     assert codes == [200, 429]
+
+
+def test_value_without_letters_or_digits_counts_as_empty(registry):
+    from paragraf.api.cards import clean_value
+
+    spec = registry.get("academic_leave_application").field("group")
+    assert clean_value(spec, "???") is None
+    assert clean_value(spec, " — ") is None
+    assert clean_value(spec, "ЖР-23-3") == "ЖР-23-3"

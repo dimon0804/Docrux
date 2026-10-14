@@ -9,6 +9,7 @@ import { Dropzone } from "@/components/Dropzone";
 import { FieldCard } from "@/components/FieldCard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { Quality } from "@/components/Quality";
+import { PhotoAdvice } from "@/components/PhotoAdvice";
 import { ReadingState } from "@/components/ReadingState";
 import { RuleChecklist } from "@/components/RuleChecklist";
 import { RulesSection } from "@/components/RulesSection";
@@ -33,7 +34,7 @@ export function Home() {
 }
 
 function Workspace() {
-  const { state, pick, setDocType, read, question, focus, reset } = useWorkspace();
+  const { state, pick, setDocType, read, question, focus, edit, reset } = useWorkspace();
   const { docTypes, failed } = useReference();
   const [draft, setDraft] = useState("");
 
@@ -134,6 +135,7 @@ function Workspace() {
             />
           </div>
           <div className="flex min-w-0 flex-col gap-5">
+            <PhotoAdvice advice={state.analysis.advice} />
             <CheckBanner
               check={state.check}
               fields={state.analysis.fields}
@@ -155,7 +157,13 @@ function Workspace() {
                 onSelect={select}
               />
             )}
-            <FieldCard analysis={state.analysis} focus={state.focus} onSelect={select} />
+            <FieldCard
+              analysis={state.analysis}
+              focus={state.focus}
+              onSelect={select}
+              onEdit={edit}
+              edited={state.edited}
+            />
             <StudentReply analysis={state.analysis} check={state.check} />
             <details className="no-print card group">
               <summary className="flex list-none items-center justify-between gap-3 px-5 py-4 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">

@@ -43,6 +43,7 @@ export function DocumentViewer({
 }: Props) {
   const [showOriginal, setShowOriginal] = useState(false);
   const located = fields.filter((field) => field.box);
+  const empty = fields.filter((field) => !field.found && field.hint_box);
   const fixes = describeFixes(quality);
   const raw = showOriginal && original;
   return (
@@ -129,6 +130,38 @@ export function DocumentViewer({
               />
             );
           })}
+          {/* Пустые поля: место на бланке, где сведения должны были быть. */}
+          {empty.map((field) => {
+            const box = field.hint_box!;
+            const active = focus.includes(field.key);
+            return (
+              <button
+                key={field.key}
+                type="button"
+                onClick={() => onSelect(field.key)}
+                aria-label={`Здесь должно быть поле «${field.label}», оно не заполнено`}
+                aria-pressed={active}
+                title={`Не найдено: ${field.label}`}
+                className={`absolute rounded-md border-2 border-dashed transition-[background-color,border-color] duration-200 ease-out ${
+                  active
+                    ? "z-10 border-warn bg-warn/15"
+                    : "border-warn/55 bg-warn/5 hover:border-warn hover:bg-warn/10"
+                }`}
+                style={{
+                  left: percent(box.x),
+                  top: percent(box.y),
+                  width: percent(box.w),
+                  height: percent(box.h),
+                }}
+              >
+                {active && (
+                  <span className="absolute -top-7 left-0 whitespace-nowrap rounded-md bg-warn px-2 py-0.5 text-[11.5px] font-semibold text-white dark:text-[#1a1304]">
+                    Нет: {field.label}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
       <figcaption className="px-2 pb-1 pt-3 text-[13px] leading-relaxed text-muted">
@@ -137,6 +170,7 @@ export function DocumentViewer({
           ? `Перед чтением ${fixes.join(", ")}. `
           : "Снимок выровнен перед чтением. "}
         Нажмите на поле в карточке, чтобы увидеть, откуда взято значение.
+        {empty.length > 0 ? " Пунктиром отмечены места, где не хватает сведений." : ""}
       </figcaption>
     </figure>
   );
