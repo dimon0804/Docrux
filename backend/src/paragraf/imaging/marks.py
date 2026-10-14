@@ -114,15 +114,7 @@ def find_signature(
     height, width = mask.shape
     text_height = _text_height(lines) * height
 
-    if anchor is not None:
-        box = anchor.box
-        x0 = int((box.x + box.w) * width + 0.5 * text_height)
-        x1 = int(min(width, x0 + 0.5 * width))
-        cy = (box.y + box.h / 2) * height
-        y0 = int(max(0, cy - 3.0 * text_height))
-        y1 = int(min(height, cy + 2.2 * text_height))
-    else:
-        x0, x1, y0, y1 = 0, width, int(0.55 * height), height
+    x0, x1, y0, y1 = _signature_zone(lines, anchor, width, height)
     if x1 - x0 < 10 or y1 - y0 < 10:
         return Mark(False)
 
@@ -156,6 +148,40 @@ def find_signature(
     )
     box = Box(x=(x0 + bx) / width, y=(y0 + by) / height, w=bw / width, h=bh / height)
     return Mark(present, box if present else None, score)
+
+
+def _signature_zone(
+    lines: list[Line], anchor: Line | None, width: int, height: int
+) -> tuple[int, int, int, int]:
+    """Где ищется росчерк, в пикселях: правее метки подписи или внизу листа."""
+    text_height = _text_height(lines) * height
+    if anchor is None:
+        return 0, width, int(0.55 * height), height
+    box = anchor.box
+    x0 = int((box.x + box.w) * width + 0.5 * text_height)
+    x1 = int(min(width, x0 + 0.5 * width))
+    cy = (box.y + box.h / 2) * height
+    y0 = int(max(0, cy - 3.0 * text_height))
+    y1 = int(min(height, cy + 2.2 * text_height))
+    return x0, x1, y0, y1
+
+
+def signature_zone(lines: list[Line], anchor: Line, width: int, height: int) -> Box | None:
+    """Место для подписи правее метки в долях снимка: туда смотрит пользователь."""
+    x0, x1, y0, y1 = _signature_zone(lines, anchor, width, height)
+    if x1 - x0 < 10 or y1 - y0 < 10:
+        return None
+    return Box(x=x0 / width, y=y0 / height, w=(x1 - x0) / width, h=(y1 - y0) / height)
+
+
+def seal_zone(anchor: Line, width: int, height: int) -> Box:
+    """Место печати: квадрат вокруг надписи «М.П.»."""
+    side = 0.2 * width
+    cx = (anchor.box.x + anchor.box.w / 2) * width
+    cy = (anchor.box.y + anchor.box.h / 2) * height
+    x0, y0 = max(0.0, cx - side / 2), max(0.0, cy - side / 2)
+    x1, y1 = min(float(width), cx + side / 2), min(float(height), cy + side / 2)
+    return Box(x=x0 / width, y=y0 / height, w=(x1 - x0) / width, h=(y1 - y0) / height)
 
 
 def _text_height(lines: list[Line]) -> float:

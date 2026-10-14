@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -12,7 +13,7 @@ from paragraf.extraction import freeform
 from paragraf.extraction.classify import detect_type
 from paragraf.extraction.fields import Found, locate, normalize, split_composite
 from paragraf.extraction.generic import OTHER_TYPE, generic_fields, guess_title
-from paragraf.imaging import marks
+from paragraf.imaging import advice, marks
 from paragraf.imaging.loader import Page, load_page
 from paragraf.imaging.preprocess import Prepared, prepare
 from paragraf.models import Analysis, Answer, Box, FieldValue, Line, OcrResult, Validation
@@ -31,6 +32,8 @@ PRINTED_TRUST = 0.6
 GARBAGE_TRUST = 0.3
 """Ниже этой уверенности печатное чтение считается случайным набором букв."""
 """Ниже этой уверенности печатное значение перепроверяется как рукописное."""
+HINT_MIN_WIDTH = 0.25
+"""Ширина подсказки, если после метки на строке ничего нет, в долях ширины снимка."""
 
 
 class TypeNotDetected(ValueError):
@@ -103,8 +106,11 @@ class Pipeline:
 
         detected, confidence = detect_type(self.registry, ocr.lines)
         quality = dict(prepared.quality)
+        if not quality.get("pdf_text"):
+            quality.update(advice.text_stats(prepared.gray, ocr.lines))
         quality["file_kind"] = page.kind
         quality["pages"] = page.pages
+        tips = advice.advise(quality)
         if type_id:
             doc_type = self.registry.get(type_id)
         elif detected is not None:
@@ -123,6 +129,7 @@ class Pipeline:
                 fields=fields,
                 validation=Validation(status="not_applicable", missing_fields=[], sources=[]),
                 quality=quality,
+                advice=tips,
                 page_breaks=breaks,
                 width=prepared.color.shape[1],
                 height=prepared.color.shape[0],
@@ -140,6 +147,7 @@ class Pipeline:
             fields=fields,
             validation=validate(doc_type, fields),
             quality=quality,
+            advice=tips,
             page_breaks=breaks,
             width=prepared.color.shape[1],
             height=prepared.color.shape[0],
@@ -175,6 +183,7 @@ class Pipeline:
 
         mask = marks.ink_mask(color)
         seal = marks.find_seal(color, mask)
+        height, width = color.shape[:2]
 
         fields: list[FieldValue] = []
         for spec in doc_type.fields:
@@ -182,11 +191,14 @@ class Pipeline:
             if spec.is_mark:
                 if spec.mark == "seal":
                     mark = seal
+                    anchor = hit.label_line if hit else _seal_anchor(lines)
+                    hint = marks.seal_zone(anchor, width, height) if anchor else None
                 else:
                     anchor = hit.label_line if hit else None
                     mark = marks.find_signature(
                         color, lines, anchor, seal.box if seal.present else None, mask
                     )
+                    hint = marks.signature_zone(lines, anchor, width, height) if anchor else None
                 fields.append(
                     FieldValue(
                         key=spec.key,
@@ -195,6 +207,7 @@ class Pipeline:
                         value=mark.present,
                         found=mark.present,
                         box=mark.box if mark.present else None,
+                        hint_box=hint if not mark.present else None,
                         confidence=round(mark.score, 3),
                         origin="mark",
                         rule=spec.rule,
@@ -240,6 +253,7 @@ class Pipeline:
                     found=value is not None,
                     raw=hit.raw if hit else (loose.raw if loose else None),
                     box=box,
+                    hint_box=_value_place(hit) if hit and value is None else None,
                     confidence=round(confidence, 3) if confidence is not None else None,
                     handwritten=handwritten,
                     guess=guess,
@@ -328,6 +342,23 @@ def _stack(
     merged = Prepared(color=np.vstack(colors), gray=np.vstack(grays), quality=quality)
     ocr = OcrResult(engine=results[0].engine, lines=lines, width=width, height=total)
     return merged, ocr, breaks[:-1]
+
+
+def _value_place(hit: Found) -> Box:
+    """Где на снимке должно стоять значение пустого поля: правее метки до конца строки."""
+    line = hit.label_line.box
+    x0 = min(hit.label_end + 0.005, 0.95)
+    x1 = min(max(line.x + line.w, x0 + HINT_MIN_WIDTH), 0.97)
+    pad = 0.15 * line.h
+    return Box(x=x0, y=max(0.0, line.y - pad), w=max(x1 - x0, 0.02), h=line.h + 2 * pad)
+
+
+_SEAL_LABEL = re.compile(r"^\s*(м\.?\s*п\.?|место\s+печати)\s*$", re.IGNORECASE)
+
+
+def _seal_anchor(lines: list[Line]) -> Line | None:
+    """Строка «М.П.»: возле неё должна стоять печать."""
+    return next((line for line in lines if _SEAL_LABEL.match(line.text)), None)
 
 
 def _same(left: str, right: str) -> bool:

@@ -60,6 +60,8 @@ class FieldValue(BaseModel):
     found: bool
     raw: str | None = None
     box: Box | None = None
+    hint_box: Box | None = None
+    """Где должно было стоять пустое поле или отметка: правее найденной метки."""
     confidence: float | None = None
     handwritten: bool = False
     """Поле заполнено от руки."""
@@ -101,6 +103,8 @@ class Analysis(BaseModel):
     fields: list[FieldValue]
     validation: Validation
     quality: dict[str, float | str | bool] = {}
+    advice: list[str] = []
+    """Советы по съёмке, если снимок мешал распознаванию."""
     page_breaks: list[float] = []
     """Границы страниц на склеенном снимке, в долях высоты."""
     width: int
