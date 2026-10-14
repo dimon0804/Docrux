@@ -94,6 +94,8 @@ class Answer(BaseModel):
     sources: list[str]
     highlight: list[str] = []
     """Ключи полей, которые стоит подсветить на снимке."""
+    trace: list[str] = []
+    """Почему ответ такой: шаги рассуждения для интерфейса."""
 
 
 class Analysis(BaseModel):

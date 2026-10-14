@@ -3,6 +3,7 @@ import { CircleAlert, CircleCheck, FileQuestion } from "lucide-react";
 import type { Answer, FieldValue } from "@/lib/api";
 
 import { SourceChip } from "./SourceChip";
+import { WhyAnswer } from "./WhyAnswer";
 
 type Props = {
   check: Answer;
@@ -87,6 +88,7 @@ export function CheckBanner({ check, fields, supported = true, title, onSelect }
               <SourceChip key={source} source={source} />
             ))}
           </div>
+          <WhyAnswer trace={check.trace} />
         </div>
       </div>
     </section>

@@ -323,7 +323,9 @@ class Pipeline:
         doc_type = self._type(analysis)
         if doc_type is None:
             return self.answerer.answer(None, analysis, COMPLETENESS_QUESTION)
-        return self.answerer.completeness(doc_type, analysis)
+        return self.answerer.with_trace(
+            doc_type, analysis, self.answerer.completeness(doc_type, analysis)
+        )
 
 
 def _stack(

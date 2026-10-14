@@ -11,7 +11,8 @@ from datetime import date
 
 from paragraf.doctypes import DocType
 from paragraf.models import Analysis, Answer
-from paragraf.qa.intents import COMPLETENESS_PATTERN, DECISION_PATTERN, detect
+from paragraf.qa.explain import explain
+from paragraf.qa.intents import COMPLETENESS_PATTERN, DECISION_PATTERN, Intent, detect
 from paragraf.qa.lexicon import stems
 from paragraf.qa.retrieval import RuleIndex
 from paragraf.rules.kb import RuleBook
@@ -100,10 +101,32 @@ class Answerer:
         question: str,
         assistant: bool = False,
     ) -> Answer:
-        if doc_type is None:
+        intent = detect(doc_type, question) if doc_type is not None else None
+        result = self._answer(doc_type, analysis, question, assistant, intent)
+        return self.with_trace(doc_type, analysis, result, intent)
+
+    def with_trace(
+        self,
+        doc_type: DocType | None,
+        analysis: Analysis,
+        result: Answer,
+        intent: Intent | None = None,
+    ) -> Answer:
+        """Добавляет к ответу объяснение, как он получен."""
+        trace = explain(doc_type, analysis, intent, result, self.index.vocabulary)
+        return result.model_copy(update={"trace": trace})
+
+    def _answer(
+        self,
+        doc_type: DocType | None,
+        analysis: Analysis,
+        question: str,
+        assistant: bool,
+        intent: Intent | None,
+    ) -> Answer:
+        if doc_type is None or intent is None:
             return self._other(analysis, question)
 
-        intent = detect(doc_type, question)
         if intent.kind == "completeness":
             return self.completeness(doc_type, analysis, question)
         if intent.kind == "decision" and DECISION_RULE in self.rulebook:

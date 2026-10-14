@@ -32,6 +32,7 @@ export type Answer = {
   answer: string;
   sources: string[];
   highlight: string[];
+  trace?: string[];
 };
 
 export type Analysis = {

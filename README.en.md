@@ -24,7 +24,7 @@ A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/d
 - Recognizes text with Tesseract.
 - Fills in the card for three document types. An empty field gets the value "не найдено" (not found).
 - Checks completeness against the regulations and lists what is missing.
-- Names the source in every answer: a clause of the regulations or a document field.
+- Names the source in every answer: a clause of the regulations or a document field. "Почему так?" shows how the answer was reached: which kind of question was recognized, where the value came from, which words of the question are missing from the sources.
 - Says so plainly when neither the document nor the regulations contain the answer.
 
 **Advanced level**

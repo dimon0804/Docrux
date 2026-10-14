@@ -6,6 +6,7 @@ import type { Analysis } from "@/lib/api";
 import type { Turn } from "@/lib/workspace";
 
 import { SourceChip } from "./SourceChip";
+import { WhyAnswer } from "./WhyAnswer";
 
 type Props = {
   analysis: Analysis;
@@ -116,6 +117,7 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect, masked 
                       ))}
                     </div>
                   )}
+                  <WhyAnswer trace={turn.answer.trace} />
                 </div>
               ) : (
                 <div
