@@ -56,6 +56,16 @@ COMPLETENESS_PATTERN = re.compile(
 )
 
 
+# Вопросы о том, что делать или что допускается, а не о том, что написано в документе:
+# «В какой срок нужно подать заявление?», «Какие причины отпуска допустимы?».
+_NOT_ABOUT_VALUE = re.compile(
+    r"\b(нужно|надо|можно|необходимо|следует|должен|должна|должно)\s+(ли\s+)?"
+    r"(\w+\s+)?\w+(ть|ти|чь)(ся)?\b"
+    r"|\bдопустим\w*|\bразрешен\w*|\bвозможн\w*|\bбывают\b"
+)
+_HOW_MANY = re.compile(r"\bсколько\b")
+
+
 @dataclass
 class Intent:
     kind: str
@@ -166,7 +176,13 @@ def detect(doc_type: DocType, question: str) -> Intent:
         if field is not None:
             return Intent("field", field, 1.0, quoted[1])
 
+    if _NOT_ABOUT_VALUE.search(text):
+        return Intent("unknown")
     matched = _match_field(doc_type, question)
     if matched is not None:
-        return Intent("field", matched[0], matched[1])
+        field = matched[0]
+        # «Сколько студентов в группе?» спрашивает о числе, а не о шифре группы.
+        if _HOW_MANY.search(text) and field.type != "integer":
+            return Intent("unknown")
+        return Intent("field", field, matched[1])
     return Intent("unknown")
