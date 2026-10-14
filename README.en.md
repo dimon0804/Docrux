@@ -71,6 +71,14 @@ docker compose up --build
 
 Open <http://localhost:8080>. The home page offers three sample documents, one per type.
 
+A five-minute tour:
+
+1. On the home page pick the "Заявление на отпуск" sample and press "Разобрать документ". The service says the date is missing (clause 4.1) and outlines its place on the picture. Press the pencil next to "Дата заявления", type any date, and the check turns positive at once.
+2. Ask "Какой размер стипендии положен студенту?" (the scholarship amount). Neither the document nor the regulations say it, and the service tells you so.
+3. Ask in plain words: "На сколько можно уйти в академ?". The answer quotes clause 4.4.
+4. Open "Пакетная проверка", load a few files from `data/open/documents` and download results.json.
+5. Open "Новый тип", press "Взять пример протокола" and "Разобрать по описанию": a protocol, which is not one of the service's types, is read by the description in the editor.
+
 ## Running in Google Colab
 
 No Docker at hand? Open the notebook: it installs the service on a free Colab machine, checks the open set and builds `results.json` for any set in the same format.
