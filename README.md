@@ -10,6 +10,10 @@
 | --- | --- | --- |
 | ![Главная страница](docs/screenshots/home-light.png) | ![Экран чтения документа](docs/screenshots/reading.png) | ![Тёмная тема](docs/screenshots/result-dark.png) |
 
+| Пакетная проверка | Песочница типов |
+| --- | --- |
+| ![Пакетная проверка](docs/screenshots/batch.png) | ![Песочница типов документов](docs/screenshots/sandbox.png) |
+
 Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 1 минута 48 секунд.
 
 ## Что умеет

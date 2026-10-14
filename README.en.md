@@ -10,6 +10,10 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 | --- | --- | --- |
 | ![Home page](docs/screenshots/home-light.png) | ![Reading a document](docs/screenshots/reading.png) | ![Dark theme](docs/screenshots/result-dark.png) |
 
+| Batch checking | Type sandbox |
+| --- | --- |
+| ![Batch checking](docs/screenshots/batch.png) | ![Document type sandbox](docs/screenshots/sandbox.png) |
+
 ## Features
 
 **Required level**

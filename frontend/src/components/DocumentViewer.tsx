@@ -154,7 +154,7 @@ export function DocumentViewer({
                   height: percent(box.h),
                 }}
               >
-                {active && (
+                {active && focus.length === 1 && (
                   <span className="absolute -top-7 left-0 whitespace-nowrap rounded-md bg-warn px-2 py-0.5 text-[11.5px] font-semibold text-white dark:text-[#1a1304]">
                     Нет: {field.label}
                   </span>
