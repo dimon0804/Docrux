@@ -1,4 +1,4 @@
-"""Командная строка: разбор одного файла и пакетный прогон набора."""
+"""Командная строка: разбор одного файла, пакетный прогон набора и Telegram-бот."""
 
 from __future__ import annotations
 
@@ -70,6 +70,23 @@ def types() -> None:
     """Показывает подключённые типы документов."""
     for doc_type in _pipeline(False).registry:
         typer.echo(f"{doc_type.id}: {doc_type.title} ({len(doc_type.fields)} полей)")
+
+
+@app.command()
+def bot() -> None:
+    """Запускает Telegram-бота. Токен берётся из PARAGRAF_BOT_TOKEN."""
+    try:
+        from paragraf.bot.app import BotTokenMissing, main
+    except ImportError:
+        typer.echo('Для бота нужен aiogram: pip install ".[bot]"', err=True)
+        raise typer.Exit(2) from None
+    try:
+        main()
+    except BotTokenMissing as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(2) from None
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
