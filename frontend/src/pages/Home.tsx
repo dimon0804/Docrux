@@ -9,6 +9,7 @@ import { Dropzone } from "@/components/Dropzone";
 import { FieldCard } from "@/components/FieldCard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { ReadingState } from "@/components/ReadingState";
+import { RuleChecklist } from "@/components/RuleChecklist";
 import { RulesSection } from "@/components/RulesSection";
 import { Samples } from "@/components/Samples";
 import { TypePicker } from "@/components/TypePicker";
@@ -28,13 +29,15 @@ export function Home() {
 }
 
 function Workspace() {
-  const { state, pick, setDocType, read, question, focus, reset } = useWorkspace();
+  const { state, pick, setDocType, read, question, focus, reset } =
+    useWorkspace();
   const { docTypes, failed } = useReference();
   const [draft, setDraft] = useState("");
 
   // Экран чтения и результат начинаются сверху, даже если форму отправили из середины страницы.
   useEffect(() => {
-    if (state.phase !== "idle") window.scrollTo({ top: 0, behavior: "instant" });
+    if (state.phase !== "idle")
+      window.scrollTo({ top: 0, behavior: "instant" });
   }, [state.phase]);
 
   const choose = (file: File) => {
@@ -51,7 +54,8 @@ function Workspace() {
     void read(draft);
   };
 
-  const select = (key: string) => focus(state.focus.length === 1 && state.focus[0] === key ? [] : [key]);
+  const select = (key: string) =>
+    focus(state.focus.length === 1 && state.focus[0] === key ? [] : [key]);
 
   if (state.phase === "ready" && state.analysis && state.check && state.image) {
     return (
@@ -80,6 +84,8 @@ function Workspace() {
           <div className="lg:sticky lg:top-[84px]">
             <DocumentViewer
               image={state.image}
+              original={state.preview}
+              quality={state.analysis.quality}
               fields={state.analysis.fields}
               focus={state.focus}
               width={state.analysis.width}
@@ -103,7 +109,18 @@ function Workspace() {
               onAsk={(text) => void question(text)}
               onSelect={select}
             />
-            <FieldCard analysis={state.analysis} focus={state.focus} onSelect={select} />
+            {state.analysis.supported && (
+              <RuleChecklist
+                documentType={state.analysis.document_type}
+                fields={state.analysis.fields}
+                onSelect={select}
+              />
+            )}
+            <FieldCard
+              analysis={state.analysis}
+              focus={state.focus}
+              onSelect={select}
+            />
             <details className="card group">
               <summary className="flex list-none items-center justify-between gap-3 px-5 py-4 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
                 Распознанный текст
@@ -141,14 +158,16 @@ function Workspace() {
           className="rise mt-5 text-[34px] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-[52px]"
           style={{ "--i": 1 } as React.CSSProperties}
         >
-          Прочитаю документ и отвечу <span className="text-brand-text">по Положению</span>
+          Прочитаю документ и отвечу{" "}
+          <span className="text-brand-text">по Положению</span>
         </h1>
         <p
           className="rise mx-auto mt-4 max-w-[560px] text-[17px] leading-relaxed text-text-2"
           style={{ "--i": 2 } as React.CSSProperties}
         >
-          Загрузите фото справки или заявления. Сервис распознает текст, заполнит карточку,
-          проверит обязательные сведения и назовёт пункт, на который опирается ответ.
+          Загрузите фото справки или заявления. Сервис распознает текст,
+          заполнит карточку, проверит обязательные сведения и назовёт пункт, на
+          который опирается ответ.
         </p>
       </div>
 
@@ -160,11 +179,16 @@ function Workspace() {
       >
         <Dropzone file={state.file} preview={state.preview} onPick={choose} />
 
-        <TypePicker docTypes={docTypes} value={state.docType} onChange={setDocType} />
+        <TypePicker
+          docTypes={docTypes}
+          value={state.docType}
+          onChange={setDocType}
+        />
 
         <div>
           <label htmlFor="first-question" className="text-sm font-medium">
-            Вопрос <span className="font-normal text-muted">(необязательно)</span>
+            Вопрос{" "}
+            <span className="font-normal text-muted">(необязательно)</span>
           </label>
           <input
             id="first-question"
@@ -178,13 +202,20 @@ function Workspace() {
         </div>
 
         {state.error && (
-          <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          <p
+            role="alert"
+            className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger"
+          >
             {state.error}
           </p>
         )}
         {failed && !state.error && (
-          <p role="alert" className="rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
-            Не удалось связаться с сервисом. Проверьте, что он запущен, и обновите страницу.
+          <p
+            role="alert"
+            className="rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn"
+          >
+            Не удалось связаться с сервисом. Проверьте, что он запущен, и
+            обновите страницу.
           </p>
         )}
 
@@ -198,7 +229,10 @@ function Workspace() {
         </button>
 
         <p className="flex items-start justify-center gap-2 text-center text-[13px] leading-relaxed text-muted">
-          <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-text" />
+          <ShieldCheck
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-brand-text"
+          />
           Файл обрабатывается в памяти и не сохраняется на сервере.
         </p>
       </form>
