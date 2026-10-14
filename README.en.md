@@ -148,6 +148,24 @@ In PowerShell set the variables first: `$env:HANDWRITING_MODEL="/models/trocr-ru
 
 Neither of the two versions we tested reads names reliably, so the model's reading is not treated as a fact. A value enters the card only when the printed OCR and the handwriting model independently read the same thing. Otherwise the field stays empty with a "filled in by hand" note and the model's reading is shown as a hint. On 30 documents filled in with handwriting fonts this cut wrong values in the card from 37 to 8. Reading accuracy did not improve.
 
+## Telegram bot
+
+The case allows the interface to be a web page or a bot, and we have both. The bot uses the same pipeline as the site, but runs it inside its own process: the file is not sent anywhere else, not even to our API.
+
+A student sends a photo or a JPG, PNG or PDF file up to 15 MB. If the file has a caption, it is treated as a question. The bot replies with the document type, the completeness check with links to the regulation points, the field card and the answer to the question. Later messages are treated as questions about the last document. Under the reply there are buttons with common questions and a button to pick the document type by hand when the bot got it wrong or did not recognise it.
+
+To run the bot, create one with [@BotFather](https://t.me/BotFather) using `/newbot` and copy the token it gives you. Then:
+
+```sh
+BOT_TOKEN=123456:ABC... docker compose --profile bot up -d --build
+```
+
+In PowerShell: `$env:BOT_TOKEN="123456:ABC..."; docker compose --profile bot up -d --build`. Without the `bot` profile, `docker compose up` starts only the site, as before. If the token is missing, the bot exits right after start and the reason is shown in `docker compose logs bot`.
+
+The bot needs internet access to `api.telegram.org`, so it runs on a separate network rather than on the API's internal one. It keeps the card of the last document in memory for 30 minutes to answer questions and writes nothing to disk. The file itself is not kept after processing; to re-read it as another type the bot downloads it from Telegram again.
+
+Without Docker, run `paragraf bot` after `pip install -e ".[bot]"`; the token is read from `PARAGRAF_BOT_TOKEN`.
+
 ## Tools and models
 
 No external OCR or language model APIs are used. Everything runs on the CPU of an ordinary laptop.
@@ -164,6 +182,7 @@ The word loader comes from the open [Uiverse.io](https://uiverse.io) collection 
 | Name cases | pymorphy3 |
 | Handwriting (optional) | TrOCR `trocr-base-handwritten-ru` in ONNX, ONNX Runtime |
 | HTTP API | FastAPI, Uvicorn, Pydantic |
+| Telegram bot (optional) | aiogram |
 | Interface | React, TypeScript, Vite, Tailwind CSS, Base UI, Motion, Sonner, Lucide |
 | Gateway | Caddy |
 | Code checks | pytest, Ruff, Vitest, ESLint |
