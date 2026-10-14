@@ -17,22 +17,15 @@ type Props = {
 const percent = (value: number) => `${(value * 100).toFixed(3)}%`;
 
 /** Что сервис сделал со снимком перед чтением, человеческими словами. */
-export function describeFixes(
-  quality: Record<string, number | string | boolean> = {},
-): string[] {
+export function describeFixes(quality: Record<string, number | string | boolean> = {}): string[] {
   const fixes: string[] = [];
   if (quality.page_cropped) fixes.push("лист найден и вырезан из фона");
   const skew = Math.abs(Number(quality.skew_degrees) || 0);
   if (skew >= 0.5)
-    fixes.push(
-      `наклон исправлен на ${skew.toFixed(skew >= 10 ? 0 : 1).replace(".", ",")}°`,
-    );
+    fixes.push(`наклон исправлен на ${skew.toFixed(skew >= 10 ? 0 : 1).replace(".", ",")}°`);
   if (quality.light_corrected) fixes.push("тени и неровный свет выровнены");
   const upscale = Number(quality.upscale) || 1;
-  if (upscale > 1.05)
-    fixes.push(
-      `снимок увеличен в ${upscale.toFixed(1).replace(".", ",")} раза`,
-    );
+  if (upscale > 1.05) fixes.push(`снимок увеличен в ${upscale.toFixed(1).replace(".", ",")} раза`);
   return fixes;
 }
 
@@ -139,9 +132,7 @@ export function DocumentViewer({
         </div>
       )}
       <figcaption className="px-2 pb-1 pt-3 text-[13px] leading-relaxed text-muted">
-        {pageBreaks.length > 0
-          ? `Страниц в документе: ${pageBreaks.length + 1}. `
-          : ""}
+        {pageBreaks.length > 0 ? `Страниц в документе: ${pageBreaks.length + 1}. ` : ""}
         {fixes.length > 0
           ? `Перед чтением ${fixes.join(", ")}. `
           : "Снимок выровнен перед чтением. "}

@@ -44,7 +44,7 @@ describe("resultRecord", () => {
       },
     ]);
     expect(record.version).toBe("1.0");
-    const [document] = record.documents;
+    const document = record.documents[0]!;
     expect(document.document_id).toBe("open-012");
     expect(document.fields).toEqual({
       student_name: "Захаров Фёдор Дмитриевич",
@@ -61,9 +61,7 @@ describe("resultRecord", () => {
 
 describe("describeFixes", () => {
   it("says nothing about a clean scan", () => {
-    expect(
-      describeFixes({ skew_degrees: 0.1, upscale: 1, light_corrected: false }),
-    ).toEqual([]);
+    expect(describeFixes({ skew_degrees: 0.1, upscale: 1, light_corrected: false })).toEqual([]);
   });
 
   it("names what was corrected on a photo", () => {

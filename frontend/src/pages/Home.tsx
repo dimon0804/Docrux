@@ -1,11 +1,4 @@
-import {
-  ChevronDown,
-  FileJson,
-  FileSearch,
-  Printer,
-  RotateCcw,
-  ShieldCheck,
-} from "lucide-react";
+import { ChevronDown, FileJson, FileSearch, Printer, RotateCcw, ShieldCheck } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -37,15 +30,13 @@ export function Home() {
 }
 
 function Workspace() {
-  const { state, pick, setDocType, read, question, focus, reset } =
-    useWorkspace();
+  const { state, pick, setDocType, read, question, focus, reset } = useWorkspace();
   const { docTypes, failed } = useReference();
   const [draft, setDraft] = useState("");
 
   // Экран чтения и результат начинаются сверху, даже если форму отправили из середины страницы.
   useEffect(() => {
-    if (state.phase !== "idle")
-      window.scrollTo({ top: 0, behavior: "instant" });
+    if (state.phase !== "idle") window.scrollTo({ top: 0, behavior: "instant" });
   }, [state.phase]);
 
   const choose = (file: File) => {
@@ -84,9 +75,7 @@ function Workspace() {
             >
               <Printer aria-hidden="true" className="size-4" />
               <span className="hidden sm:inline">Лист проверки</span>
-              <span className="sr-only sm:hidden">
-                Распечатать лист проверки
-              </span>
+              <span className="sr-only sm:hidden">Распечатать лист проверки</span>
             </button>
             <button
               type="button"
@@ -102,9 +91,7 @@ function Workspace() {
             >
               <FileJson aria-hidden="true" className="size-4" />
               <span className="hidden sm:inline">JSON</span>
-              <span className="sr-only sm:hidden">
-                Скачать результат в JSON
-              </span>
+              <span className="sr-only sm:hidden">Скачать результат в JSON</span>
             </button>
             <button
               type="button"
@@ -126,8 +113,7 @@ function Workspace() {
             month: "long",
             year: "numeric",
           })}{" "}
-          Окончательное решение принимает сотрудник деканата (пункт 1.3
-          Положения).
+          Окончательное решение принимает сотрудник деканата (пункт 1.3 Положения).
         </p>
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
@@ -166,11 +152,7 @@ function Workspace() {
                 onSelect={select}
               />
             )}
-            <FieldCard
-              analysis={state.analysis}
-              focus={state.focus}
-              onSelect={select}
-            />
+            <FieldCard analysis={state.analysis} focus={state.focus} onSelect={select} />
             <details className="no-print card group">
               <summary className="flex list-none items-center justify-between gap-3 px-5 py-4 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
                 Распознанный текст
@@ -208,16 +190,14 @@ function Workspace() {
           className="rise mt-5 text-[34px] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-[52px]"
           style={{ "--i": 1 } as React.CSSProperties}
         >
-          Прочитаю документ и отвечу{" "}
-          <span className="text-brand-text">по Положению</span>
+          Прочитаю документ и отвечу <span className="text-brand-text">по Положению</span>
         </h1>
         <p
           className="rise mx-auto mt-4 max-w-[560px] text-[17px] leading-relaxed text-text-2"
           style={{ "--i": 2 } as React.CSSProperties}
         >
-          Загрузите фото справки или заявления. Сервис распознает текст,
-          заполнит карточку, проверит обязательные сведения и назовёт пункт, на
-          который опирается ответ.
+          Загрузите фото справки или заявления. Сервис распознает текст, заполнит карточку, проверит
+          обязательные сведения и назовёт пункт, на который опирается ответ.
         </p>
       </div>
 
@@ -229,16 +209,11 @@ function Workspace() {
       >
         <Dropzone file={state.file} preview={state.preview} onPick={choose} />
 
-        <TypePicker
-          docTypes={docTypes}
-          value={state.docType}
-          onChange={setDocType}
-        />
+        <TypePicker docTypes={docTypes} value={state.docType} onChange={setDocType} />
 
         <div>
           <label htmlFor="first-question" className="text-sm font-medium">
-            Вопрос{" "}
-            <span className="font-normal text-muted">(необязательно)</span>
+            Вопрос <span className="font-normal text-muted">(необязательно)</span>
           </label>
           <input
             id="first-question"
@@ -252,20 +227,13 @@ function Workspace() {
         </div>
 
         {state.error && (
-          <p
-            role="alert"
-            className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger"
-          >
+          <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
             {state.error}
           </p>
         )}
         {failed && !state.error && (
-          <p
-            role="alert"
-            className="rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn"
-          >
-            Не удалось связаться с сервисом. Проверьте, что он запущен, и
-            обновите страницу.
+          <p role="alert" className="rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
+            Не удалось связаться с сервисом. Проверьте, что он запущен, и обновите страницу.
           </p>
         )}
 
@@ -279,10 +247,7 @@ function Workspace() {
         </button>
 
         <p className="flex items-start justify-center gap-2 text-center text-[13px] leading-relaxed text-muted">
-          <ShieldCheck
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0 text-brand-text"
-          />
+          <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-text" />
           Файл обрабатывается в памяти и не сохраняется на сервере.
         </p>
       </form>

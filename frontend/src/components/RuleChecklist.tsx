@@ -28,9 +28,7 @@ export function RuleChecklist({ documentType, fields, onSelect }: Props) {
     }))
     .filter((row) => row.fields.length > 0);
   if (rows.length === 0) return null;
-  const passed = rows.filter((row) =>
-    row.fields.every((field) => field.found),
-  ).length;
+  const passed = rows.filter((row) => row.fields.every((field) => field.found)).length;
 
   return (
     <section aria-labelledby="checklist-title" className="card overflow-hidden">
@@ -58,9 +56,7 @@ export function RuleChecklist({ documentType, fields, onSelect }: Props) {
               <span
                 aria-hidden="true"
                 className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full ${
-                  ok
-                    ? "bg-brand text-white"
-                    : "bg-warn text-white dark:text-[#1a1304]"
+                  ok ? "bg-brand text-white" : "bg-warn text-white dark:text-[#1a1304]"
                 }`}
               >
                 {ok ? (
@@ -72,9 +68,7 @@ export function RuleChecklist({ documentType, fields, onSelect }: Props) {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <SourceChip source={`rule:${row.number}`} />
-                  <span className="sr-only">
-                    {ok ? "Выполнен" : "Не выполнен"}
-                  </span>
+                  <span className="sr-only">{ok ? "Выполнен" : "Не выполнен"}</span>
                 </div>
                 {row.text && (
                   <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-text-2">
@@ -101,16 +95,10 @@ export function RuleChecklist({ documentType, fields, onSelect }: Props) {
                               strokeWidth={3}
                             />
                           ) : (
-                            <X
-                              aria-hidden="true"
-                              className="size-3 text-warn"
-                              strokeWidth={3}
-                            />
+                            <X aria-hidden="true" className="size-3 text-warn" strokeWidth={3} />
                           )}
                           {field.label}
-                          <span className="sr-only">
-                            {field.found ? ": есть" : ": не найдено"}
-                          </span>
+                          <span className="sr-only">{field.found ? ": есть" : ": не найдено"}</span>
                         </button>
                       </li>
                     ))}

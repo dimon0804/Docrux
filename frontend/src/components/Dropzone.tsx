@@ -23,11 +23,7 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
     if (disabled) return;
     const paste = (event: ClipboardEvent) => {
       const target = event.target;
-      if (
-        target instanceof Element &&
-        target.closest("input, textarea, [contenteditable]")
-      )
-        return;
+      if (target instanceof Element && target.closest("input, textarea, [contenteditable]")) return;
       const pasted = Array.from(event.clipboardData?.files ?? []).find((item) =>
         /^image\/(png|jpeg)$|^application\/pdf$/.test(item.type),
       );
@@ -100,11 +96,7 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
         <div className="flex items-center gap-4 p-4">
           <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-surface">
             {preview ? (
-              <img
-                src={preview}
-                alt=""
-                className="size-full object-cover object-top"
-              />
+              <img src={preview} alt="" className="size-full object-cover object-top" />
             ) : (
               <FileText aria-hidden="true" className="size-6 text-muted" />
             )}
@@ -136,13 +128,10 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
             <ImageUp aria-hidden="true" className="size-6" />
           </span>
           <span>
-            <span className="block text-[15px] font-semibold">
-              Перетащите фото документа сюда
-            </span>
+            <span className="block text-[15px] font-semibold">Перетащите фото документа сюда</span>
             <span className="mt-1 block text-sm text-muted">
-              или{" "}
-              <span className="font-medium text-brand-text">выберите файл</span>
-              . JPG, PNG или PDF до 15 МБ
+              или <span className="font-medium text-brand-text">выберите файл</span>. JPG, PNG или
+              PDF до 15 МБ
             </span>
             <span className="coarse-hide mt-1 text-[13px] text-muted">
               Можно вставить снимок из буфера: Ctrl+V
