@@ -14,7 +14,7 @@
 | --- | --- |
 | ![Пакетная проверка](docs/screenshots/batch.png) | ![Песочница типов документов](docs/screenshots/sandbox.png) |
 
-Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 1 минута 48 секунд.
+Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 минуты 4 секунды.
 
 ## Что умеет
 

@@ -14,6 +14,8 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 | --- | --- |
 | ![Batch checking](docs/screenshots/batch.png) | ![Document type sandbox](docs/screenshots/sandbox.png) |
 
+A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 4 seconds.
+
 ## Features
 
 **Required level**
