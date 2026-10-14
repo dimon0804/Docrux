@@ -129,6 +129,8 @@ Robustness was measured on the same 90 documents damaged by `tools/degrade.py`:
 | Blur and noise | 1.000 | 1.000 | 1.000 |
 | Sheet photographed on a desk: perspective, tilt, shadow, compression | 1.000 | 1.000 | 1.000 |
 
+Speed was measured on the production stack with the container limited to two CPU cores and 2 GB of memory: 25 documents of the open set take 1.0 s each in the median and no more than 1.2 s, including alignment, recognition and the check. No GPU is needed. The result page shows each step with its time.
+
 ## How it works
 
 1. **Intake.** The format is detected from the file content, not from its extension. PDF pages become images.
