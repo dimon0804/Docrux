@@ -2,6 +2,7 @@ import { Check, LoaderCircle, Minus, Pencil } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import type { Analysis, FieldValue } from "@/lib/api";
+import { isPersonal, maskValue } from "@/lib/privacy";
 
 type Props = {
   analysis: Analysis;
@@ -11,6 +12,8 @@ type Props = {
   /** Ручная правка значения. Возвращает текст ошибки или null. */
   onEdit?: (key: string, value: string | boolean) => Promise<string | null>;
   edited?: string[];
+  /** Показать персональные данные скрытыми. */
+  masked?: boolean;
 };
 
 const PLACEHOLDER: Record<string, string> = {
@@ -169,7 +172,15 @@ function shown(field: FieldValue): string {
 }
 
 /** Карточка полей документа. */
-export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [] }: Props) {
+export function FieldCard({
+  analysis,
+  title,
+  onSelect,
+  focus,
+  onEdit,
+  edited = [],
+  masked = false,
+}: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   // После правки фокус возвращается на карандаш того же поля, а не теряется.
   const pencils = useRef(new Map<string, HTMLButtonElement>());
@@ -262,7 +273,9 @@ export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [
                     field.found ? "font-medium text-text" : "text-warn"
                   } ${field.type === "date" || field.type === "code" ? "tabular" : ""} break-words`}
                 >
-                  {shown(field)}
+                  {masked && isPersonal(field) && field.type !== "mark"
+                    ? String(maskValue(field))
+                    : shown(field)}
                   {field.found && field.origin === "text" && (
                     <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[11px] font-medium text-muted">
                       из текста

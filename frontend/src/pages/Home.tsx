@@ -1,4 +1,13 @@
-import { ChevronDown, FileJson, FileSearch, Printer, RotateCcw, ShieldCheck } from "lucide-react";
+import {
+  ChevronDown,
+  Eye,
+  EyeOff,
+  FileJson,
+  FileSearch,
+  Printer,
+  RotateCcw,
+  ShieldCheck,
+} from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +27,7 @@ import { RulesSection } from "@/components/RulesSection";
 import { Samples } from "@/components/Samples";
 import { StudentReply } from "@/components/StudentReply";
 import { TypePicker } from "@/components/TypePicker";
+import { maskAnalysis, maskText } from "@/lib/privacy";
 import { downloadJson, printReport, resultRecord } from "@/lib/report";
 import { ReferenceProvider, useReference } from "@/lib/rules";
 import { useWorkspace } from "@/lib/workspace";
@@ -39,6 +49,7 @@ function Workspace() {
   const { state, pick, setDocType, read, question, focus, edit, reset } = useWorkspace();
   const { docTypes, failed } = useReference();
   const [draft, setDraft] = useState("");
+  const [masked, setMasked] = useState(false);
 
   // Экран чтения и результат начинаются сверху, даже если форму отправили из середины страницы.
   useEffect(() => {
@@ -78,6 +89,25 @@ function Workspace() {
           <div className="no-print flex flex-wrap items-center gap-2">
             <button
               type="button"
+              aria-pressed={masked}
+              onClick={() => setMasked((value) => !value)}
+              title="Скрыть ФИО, номер и подпись на снимке, в карточке и при выгрузке"
+              className={`pressable inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-medium ${
+                masked
+                  ? "border-brand/40 bg-brand-softer text-brand-text"
+                  : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text"
+              }`}
+            >
+              {masked ? (
+                <EyeOff aria-hidden="true" className="size-4" />
+              ) : (
+                <Eye aria-hidden="true" className="size-4" />
+              )}
+              <span className="hidden sm:inline">{masked ? "Данные скрыты" : "Скрыть данные"}</span>
+              <span className="sr-only sm:hidden">Скрыть персональные данные</span>
+            </button>
+            <button
+              type="button"
               onClick={printReport}
               title="Распечатать или сохранить в PDF"
               className="pressable inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm font-medium text-text-2 hover:border-line-strong hover:text-text"
@@ -92,7 +122,23 @@ function Workspace() {
                 const name = state.file?.name ?? "document";
                 downloadJson(
                   `${name.replace(/\.[^.]+$/, "")}.paragraf.json`,
-                  resultRecord(name, state.analysis!, state.turns),
+                  masked
+                    ? resultRecord(
+                        name,
+                        maskAnalysis(state.analysis!),
+                        state.turns.map((turn) =>
+                          turn.answer
+                            ? {
+                                ...turn,
+                                answer: {
+                                  ...turn.answer,
+                                  answer: maskText(turn.answer.answer, state.analysis!.fields),
+                                },
+                              }
+                            : turn,
+                        ),
+                      )
+                    : resultRecord(name, state.analysis!, state.turns),
                 );
               }}
               title="Карточка, проверка и ответы в формате results.json"
@@ -128,6 +174,7 @@ function Workspace() {
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
           <div className="lg:sticky lg:top-[84px]">
             <DocumentViewer
+              masked={masked}
               image={state.image}
               original={state.preview}
               quality={state.analysis.quality}
@@ -150,6 +197,7 @@ function Workspace() {
             />
             <Remarks remarks={state.analysis.remarks} onSelect={select} />
             <Conversation
+              masked={masked}
               analysis={state.analysis}
               turns={state.turns}
               asking={state.asking}
@@ -164,6 +212,7 @@ function Workspace() {
               />
             )}
             <FieldCard
+              masked={masked}
               analysis={state.analysis}
               focus={state.focus}
               onSelect={select}
@@ -181,7 +230,9 @@ function Workspace() {
                 />
               </summary>
               <pre className="scroll-thin max-h-80 overflow-auto whitespace-pre-wrap border-t border-line px-5 py-4 font-sans text-sm leading-relaxed text-text-2">
-                {state.analysis.text}
+                {masked
+                  ? maskText(state.analysis.text, state.analysis.fields)
+                  : state.analysis.text}
               </pre>
             </details>
           </div>

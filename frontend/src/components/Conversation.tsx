@@ -1,6 +1,7 @@
 import { ArrowUp, CircleHelp } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
+import { maskText } from "@/lib/privacy";
 import type { Analysis } from "@/lib/api";
 import type { Turn } from "@/lib/workspace";
 
@@ -12,6 +13,8 @@ type Props = {
   asking: boolean;
   onAsk: (question: string) => void;
   onSelect: (key: string) => void;
+  /** Скрыть ФИО и номера в тексте ответов. */
+  masked?: boolean;
 };
 
 const MAX_LENGTH = 500;
@@ -37,7 +40,7 @@ function suggestions(analysis: Analysis): string[] {
 }
 
 /** Вопросы студента и ответы сервиса со ссылками на источники. */
-export function Conversation({ analysis, turns, asking, onAsk, onSelect }: Props) {
+export function Conversation({ analysis, turns, asking, onAsk, onSelect, masked = false }: Props) {
   const [draft, setDraft] = useState("");
   const end = useRef<HTMLDivElement>(null);
   const labels = new Map(analysis.fields.map((field) => [field.key, field.label]));
@@ -91,7 +94,9 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect }: Props
                       Ответа в источниках нет
                     </p>
                   )}
-                  <p className="text-[15px] leading-relaxed">{turn.answer.answer}</p>
+                  <p className="text-[15px] leading-relaxed">
+                    {masked ? maskText(turn.answer.answer, analysis.fields) : turn.answer.answer}
+                  </p>
                   {turn.stale && (
                     <p className="mt-1.5 text-[12.5px] text-muted">
                       Ответ дан до ручной правки карточки. Задайте вопрос ещё раз, чтобы учесть

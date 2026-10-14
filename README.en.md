@@ -48,6 +48,7 @@ A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/d
 - An empty field is outlined on the picture where its value should have been.
 - The card can be corrected by hand: the value is normalized, the check is redone at once and the field is marked as edited.
 - A ready reply to the student listing what is missing with the clauses, copied in one click.
+- "Скрыть данные" blacks out names, the document number and the signature on the picture and hides them in the card, answers, check sheet and JSON, so a result can be shared without personal data.
 - A printable check sheet (or PDF) and a JSON export in the results.json format.
 - Batch checking: up to 60 files at once, a result for each, a combined results.json and a CSV for Excel.
 - A type sandbox: describe a new document type in the browser and try it on a file right away; the service's own types stay untouched.

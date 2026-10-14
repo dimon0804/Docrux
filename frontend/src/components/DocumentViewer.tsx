@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import type { FieldValue } from "@/lib/api";
+import { isPersonal } from "@/lib/privacy";
 
 type Props = {
   image: string;
@@ -12,6 +13,8 @@ type Props = {
   height: number;
   pageBreaks?: number[];
   onSelect: (key: string) => void;
+  /** Закрасить на снимке ФИО, номер и подпись. */
+  masked?: boolean;
 };
 
 const percent = (value: number) => `${(value * 100).toFixed(3)}%`;
@@ -40,16 +43,19 @@ export function DocumentViewer({
   height,
   pageBreaks = [],
   onSelect,
+  masked = false,
 }: Props) {
   const [showOriginal, setShowOriginal] = useState(false);
   // Пустое поле рисуется одной пунктирной рамкой, даже если у него есть и зона почерка.
   const empty = fields.filter((field) => !field.found && field.hint_box);
   const located = fields.filter((field) => field.box && !(!field.found && field.hint_box));
   const fixes = describeFixes(quality);
-  const raw = showOriginal && original;
+  // Исходное фото закрасить нельзя: координаты полей есть только у выровненного листа.
+  const raw = showOriginal && original && !masked;
+  const hidden = masked ? fields.filter((field) => field.box && isPersonal(field)) : [];
   return (
     <figure className="card overflow-hidden p-2 sm:p-3">
-      {original && (
+      {original && !masked && (
         <div
           role="group"
           aria-label="Какой снимок показать"
@@ -122,6 +128,23 @@ export function DocumentViewer({
                     ? "z-10 bg-brand/20 shadow-[0_0_0_2px_var(--brand),0_0_0_6px_rgb(80_184_72/0.22)]"
                     : "bg-transparent opacity-0 shadow-[0_0_0_1.5px_rgb(80_184_72/0.55)] hover:bg-brand/10 hover:opacity-100 focus-visible:opacity-100"
                 }`}
+                style={{
+                  left: percent(Math.max(0, box.x - pad)),
+                  top: percent(Math.max(0, box.y - pad)),
+                  width: percent(box.w + pad * 2),
+                  height: percent(box.h + pad * 2),
+                }}
+              />
+            );
+          })}
+          {hidden.map((field) => {
+            const box = field.box!;
+            const pad = 0.004;
+            return (
+              <span
+                key={`mask-${field.key}`}
+                aria-hidden="true"
+                className="pointer-events-none absolute z-20 rounded-[3px] bg-[#1b1f2a]"
                 style={{
                   left: percent(Math.max(0, box.x - pad)),
                   top: percent(Math.max(0, box.y - pad)),
