@@ -197,6 +197,14 @@ def format_report(
     return short[:MESSAGE_LIMIT]
 
 
+def web_app_url(url: str | None) -> str | None:
+    """Telegram открывает мини-приложения только по HTTPS."""
+    if not url:
+        return None
+    url = url.strip()
+    return url if url.startswith("https://") else None
+
+
 def suggestions(analysis: Analysis) -> list[str]:
     """Подсказки вопросов, как в окне вопросов на сайте."""
     if not analysis.supported:

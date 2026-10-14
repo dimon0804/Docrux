@@ -15,7 +15,14 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, CommandStart
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    MenuButtonWebApp,
+    Message,
+    WebAppInfo,
+)
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram.utils.token import TokenValidationError
 
@@ -146,7 +153,17 @@ def build_router(pipeline: Pipeline, settings: Settings) -> Router:
     @router.message(CommandStart())
     @router.message(Command("help"))
     async def on_help(message: Message) -> None:
-        await message.answer(escape(help_text))
+        site = logic.web_app_url(settings.bot_web_app_url)
+        markup = (
+            InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="Открыть сервис", web_app=WebAppInfo(url=site))]
+                ]
+            )
+            if site
+            else None
+        )
+        await message.answer(escape(help_text), reply_markup=markup)
 
     @router.message(F.photo | F.document)
     async def on_file(message: Message, bot: Bot) -> None:
@@ -255,6 +272,15 @@ async def run(settings: Settings) -> None:
     pipeline = await asyncio.to_thread(Pipeline.default, settings)
     dispatcher = Dispatcher()
     dispatcher.include_router(build_router(pipeline, settings))
+    site = logic.web_app_url(settings.bot_web_app_url)
+    if site:
+        # Кнопка меню рядом с полем ввода открывает сайт внутри Telegram.
+        try:
+            await bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(text="Параграф", web_app=WebAppInfo(url=site))
+            )
+        except TelegramAPIError as exc:
+            log.warning("bot_menu_button_failed", error=type(exc).__name__)
     log.info("bot_started")
     try:
         await dispatcher.start_polling(bot, allowed_updates=["message", "callback_query"])

@@ -62,6 +62,8 @@ class Settings(BaseSettings):
     bot_max_chats: int = 1000
     bot_files_per_minute: int = 5
     bot_messages_per_minute: int = 20
+    bot_web_app_url: str | None = None
+    """Адрес сайта по HTTPS. Если задан, бот открывает сервис прямо в Telegram (Mini App)."""
 
     @property
     def doc_types_dir(self) -> Path:

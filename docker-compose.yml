@@ -79,6 +79,8 @@ services:
       # обязательность здесь сломала бы обычный docker compose up. Без токена бот сам
       # завершается с понятной ошибкой: docker compose logs bot.
       PARAGRAF_BOT_TOKEN: ${BOT_TOKEN:-}
+      # Адрес сайта по HTTPS: бот откроет сервис прямо в Telegram.
+      PARAGRAF_BOT_WEB_APP_URL: ${WEB_APP_URL:-}
       PARAGRAF_MAX_UPLOAD_MB: "15"
       PARAGRAF_HANDWRITING_MODEL: ${HANDWRITING_MODEL:-}
     volumes:

@@ -257,3 +257,9 @@ def test_report_lists_remarks(pipeline: Pipeline, open_dir: Path):
     )
     text = logic.format_report(analysis, pipeline.check(analysis))
     assert "<b>На что обратить внимание</b>\n• Курс «9»" in text
+
+
+def test_web_app_needs_https():
+    assert logic.web_app_url("https://paragraf.example.ru") == "https://paragraf.example.ru"
+    assert logic.web_app_url("http://localhost:8080") is None
+    assert logic.web_app_url(None) is None
