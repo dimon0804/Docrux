@@ -14,6 +14,7 @@ import { Link } from "wouter";
 
 import { type AnalyzeResponse, analyze, ApiError, checkFile } from "@/lib/api";
 import { downloadJson } from "@/lib/report";
+import { groupStudents } from "@/lib/students";
 
 const MAX_FILES = 60;
 
@@ -358,6 +359,52 @@ export function Batch() {
           </ul>
         </div>
       )}
+
+      <Students items={items} />
+    </section>
+  );
+}
+
+/** Сверка по студентам: чьи это документы и где ФИО пишется по-разному. */
+function Students({ items }: { items: Item[] }) {
+  const docs = items.flatMap(({ file, result }) => {
+    const name = result?.analysis.fields.find((field) => field.key === "student_name");
+    return name?.found && typeof name.value === "string"
+      ? [{ file: file.name, title: result!.analysis.document_title, name: name.value }]
+      : [];
+  });
+  if (docs.length < 2) return null;
+  const students = groupStudents(docs);
+  const suspicious = students.filter((student) => student.similar.length > 0).length;
+  return (
+    <section aria-labelledby="students-title" className="card mt-5 overflow-hidden">
+      <div className="border-b border-line px-5 py-3">
+        <h2 id="students-title" className="text-[15px] font-semibold">
+          Студенты в пакете
+        </h2>
+        <p className="mt-0.5 text-[13px] text-muted">
+          {suspicious
+            ? "Похожие ФИО, которые не совпадают полностью, отмечены: возможно, в одном из документов опечатка."
+            : "Документы сгруппированы по ФИО студента."}
+        </p>
+      </div>
+      <ul>
+        {students.map((student) => (
+          <li key={student.name} className="border-b border-line px-5 py-3 last:border-b-0">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <p className="text-sm font-semibold">{student.name}</p>
+              <span className="text-[12.5px] text-muted">
+                {student.docs.map((doc) => doc.title).join(", ")}
+              </span>
+            </div>
+            {student.similar.length > 0 && (
+              <p className="mt-1 text-[13px] text-warn">
+                Похоже на: {student.similar.join(", ")}. Проверьте написание ФИО.
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

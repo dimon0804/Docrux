@@ -50,7 +50,7 @@ A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/d
 - A ready reply to the student listing what is missing with the clauses, copied in one click.
 - "Скрыть данные" blacks out names, the document number and the signature on the picture and hides them in the card, answers, check sheet and JSON, so a result can be shared without personal data.
 - A printable check sheet (or PDF) and a JSON export in the results.json format.
-- Batch checking: up to 60 files at once, a result for each, a combined results.json and a CSV for Excel.
+- Batch checking: up to 60 files at once, a result for each, a combined results.json and a CSV for Excel. Documents are grouped by student, and names that almost match (a masculine and a feminine surname, a full name and initials) are flagged as a possible typo.
 - A type sandbox: describe a new document type in the browser and try it on a file right away; the service's own types stay untouched.
 
 **For the student**
