@@ -1,5 +1,5 @@
 import { Check, LoaderCircle, Minus, Pencil } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import type { Analysis, FieldValue } from "@/lib/api";
 
@@ -36,18 +36,29 @@ function EditRow({
   );
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const form = useRef<HTMLFormElement>(null);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
     const error = await onSave(draft);
     setSaving(false);
-    if (error) setProblem(error);
-    else onCancel();
+    if (error) {
+      setProblem(error);
+      // Кнопка на время сохранения была неактивна и отпустила фокус: возвращаем его в форму.
+      form.current?.querySelector<HTMLElement>("input, [aria-checked=true]")?.focus();
+    } else onCancel();
   };
 
   return (
-    <form onSubmit={submit} className="bg-surface-2/60 px-5 py-3.5">
+    <form
+      ref={form}
+      onSubmit={submit}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") onCancel();
+      }}
+      className="bg-surface-2/60 px-5 py-3.5"
+    >
       <label htmlFor={`edit-${field.key}`} className="text-[13px] text-muted">
         {field.label}
       </label>
@@ -65,6 +76,7 @@ function EditRow({
               <button
                 key={option.label}
                 id={option.value ? `edit-${field.key}` : undefined}
+                autoFocus={draft === option.value}
                 type="button"
                 role="radio"
                 aria-checked={draft === option.value}
@@ -83,9 +95,6 @@ function EditRow({
             autoFocus
             value={String(draft)}
             onChange={(event) => setDraft(event.target.value.slice(0, 300))}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") onCancel();
-            }}
             placeholder={PLACEHOLDER[field.type] ?? PLACEHOLDER.text}
             autoComplete="off"
             className="h-10 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] outline-none focus:border-brand focus:shadow-[0_0_0_4px_rgb(80_184_72/0.16)]"
@@ -162,6 +171,15 @@ function shown(field: FieldValue): string {
 /** Карточка полей документа. */
 export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [] }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
+  // После правки фокус возвращается на карандаш того же поля, а не теряется.
+  const pencils = useRef(new Map<string, HTMLButtonElement>());
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+  useEffect(() => {
+    if (returnTo && editing === null) {
+      pencils.current.get(returnTo)?.focus();
+      setReturnTo(null);
+    }
+  }, [returnTo, editing]);
   const editable = Boolean(onEdit) && analysis.supported;
   const found = analysis.fields.filter((field) => field.found).length;
   return (
@@ -189,7 +207,10 @@ export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [
                 <EditRow
                   field={field}
                   onSave={(value) => onEdit(field.key, value)}
-                  onCancel={() => setEditing(null)}
+                  onCancel={() => {
+                    setEditing(null);
+                    setReturnTo(field.key);
+                  }}
                 />
               </li>
             );
@@ -202,6 +223,10 @@ export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [
             >
               {editable && (
                 <button
+                  ref={(node) => {
+                    if (node) pencils.current.set(field.key, node);
+                    else pencils.current.delete(field.key);
+                  }}
                   type="button"
                   onClick={() => setEditing(field.key)}
                   aria-label={`Исправить поле «${field.label}»`}

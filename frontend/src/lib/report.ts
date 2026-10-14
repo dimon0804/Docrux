@@ -3,7 +3,10 @@ import type { Turn } from "./workspace";
 
 /** Запись документа в том же формате, что results.json пакетного прогона. */
 export function resultRecord(fileName: string, analysis: Analysis, turns: Turn[]) {
-  const answered = turns.filter((turn): turn is Turn & { answer: Answer } => turn.answer !== null);
+  // Ответы, полученные до ручной правки карточки, могли устареть: в выгрузку не идут.
+  const answered = turns.filter(
+    (turn): turn is Turn & { answer: Answer } => turn.answer !== null && !turn.stale,
+  );
   return {
     version: "1.0",
     documents: [

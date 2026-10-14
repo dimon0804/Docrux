@@ -16,6 +16,8 @@ export type Turn = {
   question: string;
   answer: Answer | null;
   error: string | null;
+  /** Ответ получен до ручной правки карточки и мог устареть. */
+  stale?: boolean;
 };
 
 export type Workspace = {
@@ -95,26 +97,29 @@ function reducer(state: Workspace, action: Action): Workspace {
       return { ...state, focus: action.keys };
     case "edited": {
       if (!state.analysis) return state;
-      // Рамки на снимке остаются от распознавания, значение и проверка приходят с сервера.
-      const fresh = new Map(action.result.fields.map((field) => [field.key, field]));
-      const fields = state.analysis.fields.map((field) => {
-        const next = fresh.get(field.key);
-        if (!next) return field;
-        const changed = field.key === action.key;
-        return {
-          ...field,
-          value: next.value,
-          found: next.found,
-          box: changed ? null : field.box,
-          confidence: changed ? null : field.confidence,
-          handwritten: changed ? false : field.handwritten,
-        };
-      });
+      // С сервера берём только исправленное поле и новую проверку: остальные значения
+      // остаются такими, какими их прочитал сервис.
+      const next = action.result.fields.find((field) => field.key === action.key);
+      if (!next) return state;
+      const fields = state.analysis.fields.map((field) =>
+        field.key === action.key
+          ? {
+              ...field,
+              value: next.value,
+              found: next.found,
+              box: null,
+              confidence: null,
+              handwritten: false,
+              guess: null,
+            }
+          : field,
+      );
       return {
         ...state,
         analysis: { ...state.analysis, fields, validation: action.result.validation },
         check: action.result.check,
         edited: state.edited.includes(action.key) ? state.edited : [...state.edited, action.key],
+        turns: state.turns.map((turn) => ({ ...turn, stale: true })),
       };
     }
     case "reset":
@@ -213,23 +218,26 @@ export function useWorkspace() {
   const focus = useCallback((keys: string[]) => dispatch({ type: "focus", keys }), []);
 
   /** Значение поля поправили вручную: сервер приводит его к формату и перепроверяет документ. */
-  const edit = useCallback(
-    async (key: string, value: string | boolean): Promise<string | null> => {
-      if (!state.analysis) return null;
-      try {
-        const result = await recheck(state.analysis, [{ key, value }]);
-        dispatch({ type: "edited", key, result });
-        const field = result.fields.find((item) => item.key === key);
-        if (typeof value === "string" && value.trim() && field && !field.found) {
-          return "Значение не похоже на ожидаемое для этого поля. Проверьте формат.";
-        }
-        return null;
-      } catch (error) {
-        return message(error);
+  // Правки идут от самой свежей карточки, даже если предыдущий запрос ещё в пути.
+  const latest = useRef(state.analysis);
+  latest.current = state.analysis;
+
+  const edit = useCallback(async (key: string, value: string | boolean): Promise<string | null> => {
+    const analysis = latest.current;
+    if (!analysis) return null;
+    try {
+      const result = await recheck(analysis, [{ key, value }]);
+      const field = result.fields.find((item) => item.key === key);
+      if (typeof value === "string" && value.trim() && field && !field.found) {
+        // Значение не подошло: прежнее остаётся в карточке.
+        return "Значение не похоже на ожидаемое для этого поля. Проверьте формат.";
       }
-    },
-    [state.analysis],
-  );
+      dispatch({ type: "edited", key, result });
+      return null;
+    } catch (error) {
+      return message(error);
+    }
+  }, []);
 
   const reset = useCallback(() => {
     controller.current?.abort();

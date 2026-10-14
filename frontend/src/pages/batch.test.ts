@@ -24,3 +24,22 @@ describe("csv", () => {
     expect(text).not.toMatch(/;"=|;"\+/);
   });
 });
+
+describe("resultsJson", () => {
+  it("gives files with the same name different document ids", async () => {
+    const { resultsJson } = await import("./Batch");
+    const result = {
+      analysis: { document_type: "study_certificate", fields: [], validation: {} },
+      check: { answerable: true, value: "document_ok", answer: "", sources: [] },
+    };
+    const items = ["scan.pdf", "scan.pdf", "other.png"].map((name, id) => ({
+      id,
+      file: { name },
+      state: "done",
+      error: null,
+      result,
+    }));
+    const ids = resultsJson(items as never).documents.map((doc) => doc.document_id);
+    expect(ids).toEqual(["scan", "scan-2", "other"]);
+  });
+});

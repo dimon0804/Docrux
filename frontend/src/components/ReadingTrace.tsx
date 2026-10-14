@@ -46,9 +46,11 @@ export function traceSteps(analysis: Analysis): Step[] {
       icon: ScanLine,
       title: "Текст распознан",
       text:
-        lines !== undefined && words !== undefined
-          ? `Tesseract нашёл ${lines} ${plural(lines, "строку", "строки", "строк")} и ${words} ${plural(words, "слово", "слова", "слов")}.`
-          : "Текст распознан.",
+        lines !== undefined && q.pdf_text
+          ? `Из текстового слоя PDF взято ${lines} ${plural(lines, "строка", "строки", "строк")}.`
+          : lines !== undefined && words !== undefined
+            ? `Tesseract нашёл ${lines} ${plural(lines, "строку", "строки", "строк")} и ${words} ${plural(words, "слово", "слова", "слов")}.`
+            : "Текст распознан.",
       ms: num(q.ms_ocr),
     },
     {

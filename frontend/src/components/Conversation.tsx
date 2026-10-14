@@ -71,7 +71,10 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect }: Props
                 {turn.question}
               </p>
               {turn.error ? (
-                <p role="alert" className="rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+                <p
+                  role="alert"
+                  className="rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger"
+                >
                   {turn.error}
                 </p>
               ) : turn.answer ? (
@@ -89,6 +92,12 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect }: Props
                     </p>
                   )}
                   <p className="text-[15px] leading-relaxed">{turn.answer.answer}</p>
+                  {turn.stale && (
+                    <p className="mt-1.5 text-[12.5px] text-muted">
+                      Ответ дан до ручной правки карточки. Задайте вопрос ещё раз, чтобы учесть
+                      исправление.
+                    </p>
+                  )}
                   {turn.answer.sources.length > 0 && (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                       <span className="mr-1 text-[13px] text-muted">Источник:</span>

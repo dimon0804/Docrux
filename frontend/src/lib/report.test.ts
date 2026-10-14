@@ -156,3 +156,17 @@ describe("traceSteps", () => {
     expect(steps[5]!.text).toContain("п. 3.3");
   });
 });
+
+describe("resultRecord after a manual edit", () => {
+  it("leaves out answers given before the card was corrected", () => {
+    const turn = (id: number, stale: boolean) => ({
+      id,
+      question: `Вопрос ${id}`,
+      answer: { answerable: true, value: "x", answer: "x", sources: [], highlight: [] },
+      error: null,
+      stale,
+    });
+    const record = resultRecord("doc.png", analysis, [turn(1, true), turn(2, false)] as never);
+    expect(record.documents[0]!.answers.map((answer) => answer.question)).toEqual(["Вопрос 2"]);
+  });
+});

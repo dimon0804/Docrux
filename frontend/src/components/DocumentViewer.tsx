@@ -42,8 +42,9 @@ export function DocumentViewer({
   onSelect,
 }: Props) {
   const [showOriginal, setShowOriginal] = useState(false);
-  const located = fields.filter((field) => field.box);
+  // Пустое поле рисуется одной пунктирной рамкой, даже если у него есть и зона почерка.
   const empty = fields.filter((field) => !field.found && field.hint_box);
+  const located = fields.filter((field) => field.box && !(!field.found && field.hint_box));
   const fixes = describeFixes(quality);
   const raw = showOriginal && original;
   return (

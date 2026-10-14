@@ -25,20 +25,37 @@ type Item = {
   error: string | null;
 };
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Пауза, которую можно прервать кнопкой «Остановить» или уходом со страницы. */
+function wait(ms: number, signal: AbortSignal) {
+  return new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
 
 function stem(name: string) {
   return name.replace(/\.[^.]+$/, "") || "document";
 }
 
 /** Все разобранные документы в формате results.json. */
-function resultsJson(items: Item[]) {
+export function resultsJson(items: Item[]) {
+  // Два файла «scan.pdf» из разных папок не должны слиться в один документ.
+  const used = new Map<string, number>();
+  const uniqueId = (name: string) => {
+    const base = stem(name);
+    const count = (used.get(base) ?? 0) + 1;
+    used.set(base, count);
+    return count === 1 ? base : `${base}-${count}`;
+  };
   return {
     version: "1.0",
     documents: items
       .filter((item) => item.result)
       .map(({ file, result }) => ({
-        document_id: stem(file.name),
+        document_id: uniqueId(file.name),
         document_type: result!.analysis.document_type,
         fields: Object.fromEntries(
           result!.analysis.fields.map((field) => [field.key, field.value]),
@@ -94,14 +111,10 @@ export function Batch() {
   const [items, setItems] = useState<Item[]>([]);
   const [running, setRunning] = useState(false);
   const counter = useRef(0);
-  const stop = useRef(false);
+  const controller = useRef<AbortController | null>(null);
 
-  useEffect(
-    () => () => {
-      stop.current = true;
-    },
-    [],
-  );
+  // Уход со страницы останавливает проверку и отменяет запрос, который уже в пути.
+  useEffect(() => () => controller.current?.abort(), []);
 
   const add = (files: FileList | File[]) => {
     const accepted: Item[] = [];
@@ -125,25 +138,35 @@ export function Batch() {
     setItems((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
 
   const run = useCallback(async () => {
+    const abort = new AbortController();
+    controller.current = abort;
     setRunning(true);
-    stop.current = false;
     const queue = items.filter((item) => item.state === "queued" || item.state === "failed");
     for (const item of queue) {
-      if (stop.current) break;
+      if (abort.signal.aborted) break;
       update(item.id, { state: "reading", error: null });
       for (let attempt = 0; ; attempt += 1) {
         try {
-          const result = await analyze(item.file);
+          const result = await analyze(item.file, { signal: abort.signal });
           update(item.id, { state: "done", result });
           break;
         } catch (error) {
+          if (abort.signal.aborted) {
+            // Остановили посреди разбора: документ вернётся в очередь.
+            update(item.id, { state: "queued" });
+            break;
+          }
           // Сервис ограничивает частоту запросов или занят: ждём столько, сколько он попросил.
           if (
             error instanceof ApiError &&
             (error.status === 429 || error.status === 503) &&
             attempt < 5
           ) {
-            await wait((error.retryAfter ?? 10) * 1000);
+            await wait((error.retryAfter ?? 10) * 1000, abort.signal);
+            if (abort.signal.aborted) {
+              update(item.id, { state: "queued" });
+              break;
+            }
             continue;
           }
           const message =
@@ -153,6 +176,7 @@ export function Batch() {
         }
       }
     }
+    controller.current = null;
     setRunning(false);
   }, [items]);
 
@@ -235,7 +259,7 @@ export function Batch() {
             <button
               type="button"
               onClick={() => {
-                stop.current = true;
+                controller.current?.abort();
               }}
               className="pressable rounded-xl px-3 py-2.5 text-sm font-medium text-text-2 hover:text-text"
             >
