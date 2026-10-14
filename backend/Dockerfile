@@ -36,9 +36,13 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /src
 COPY backend/pyproject.toml ./
+# Сначала только зависимости: этот слой не пересобирается при правке кода, и пакеты
+# не скачиваются заново. Telegram-бот запускается из того же образа.
+RUN mkdir -p src/paragraf && touch src/paragraf/__init__.py \
+    && pip install ".[handwriting,bot]" \
+    && pip uninstall -y paragraf
 COPY backend/src ./src
-# Telegram-бот запускается из того же образа: docker compose --profile bot.
-RUN pip install ".[handwriting,bot]"
+RUN pip install --no-deps .
 
 
 FROM base AS runtime
