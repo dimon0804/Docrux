@@ -350,3 +350,28 @@ def test_selfcheck_streams_every_document_and_the_organizers_metrics(client):
     assert done["questions"] == 120
     assert done["field_accuracy_macro"] == 1.0
     assert done["question_exact_match"] == 1.0
+
+
+def test_speech_is_off_without_a_model(client):
+    assert client.get("/api/speech/available").json() == {"available": False}
+    response = client.post("/api/speech", content=b"RIFF")
+    assert response.status_code == 404
+
+
+def test_speech_rejects_wrong_audio_format():
+    import io
+    import wave
+
+    from paragraf.speech import SpeechError, SpeechRecognizer
+
+    recognizer = SpeechRecognizer.__new__(SpeechRecognizer)
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as audio:
+        audio.setnchannels(2)
+        audio.setsampwidth(2)
+        audio.setframerate(44100)
+        audio.writeframes(b"\x00\x00\x00\x00" * 100)
+    with pytest.raises(SpeechError, match="16 кГц"):
+        recognizer.transcribe(buffer.getvalue())
+    with pytest.raises(SpeechError, match="прочитать"):
+        recognizer.transcribe(b"not a wav file")

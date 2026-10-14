@@ -34,6 +34,7 @@ handwriting = [
 ]
 paddle = ["rapidocr>=3.0", "onnxruntime>=1.19"]
 bot = ["aiogram>=3.13"]
+speech = ["vosk>=0.3.45"]
 dev = [
     "pytest>=8.3",
     "pytest-cov>=5.0",

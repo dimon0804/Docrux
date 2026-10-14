@@ -39,7 +39,7 @@ COPY backend/pyproject.toml ./
 # Сначала только зависимости: этот слой не пересобирается при правке кода, и пакеты
 # не скачиваются заново. Telegram-бот запускается из того же образа.
 RUN mkdir -p src/paragraf && touch src/paragraf/__init__.py \
-    && pip install ".[handwriting,bot]" \
+    && pip install ".[handwriting,bot,speech]" \
     && pip uninstall -y paragraf
 COPY backend/src ./src
 RUN pip install --no-deps .

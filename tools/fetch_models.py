@@ -4,8 +4,9 @@
 Положению. Модель добавляет одну возможность:
 
   handwriting  проверка полей, заполненных от руки (TrOCR, около 1,5 ГБ)
+  speech       вопросы голосом (Vosk, маленькая русская модель, около 45 МБ)
 
-    python tools/fetch_models.py handwriting
+    python tools/fetch_models.py handwriting speech
 
 Закачку можно прервать и запустить снова: она продолжится с того же места.
 """
@@ -19,7 +20,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1] / "models"
 TROCR = "https://huggingface.co/Mievst/trocr-base-handwritten-ru-ONNX/resolve/main"
 
+VOSK = "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip"
+
 MODELS: dict[str, list[tuple[str, str]]] = {
+    "speech": [(VOSK, "vosk-model-small-ru-0.22.zip")],
     "handwriting": [
         (f"{TROCR}/{name}", f"trocr-ru/{name}")
         for name in (
@@ -63,6 +67,25 @@ def fetch(url: str, target: Path) -> None:
     print()
 
 
+def unpack(archive: Path) -> None:
+    """Модель Vosk приходит архивом: распаковываем в models/speech-ru."""
+    import shutil
+    import zipfile
+
+    target = ROOT / "speech-ru"
+    if (target / "am").is_dir():
+        print("  уже распакована: speech-ru")
+        return
+    with zipfile.ZipFile(archive) as zf:
+        zf.extractall(ROOT)
+    inner = ROOT / archive.stem
+    if target.exists():
+        shutil.rmtree(target)
+    inner.rename(target)
+    archive.unlink()
+    print("  распакована в speech-ru")
+
+
 def main(names: list[str]) -> int:
     unknown = [name for name in names if name not in MODELS]
     if not names or unknown:
@@ -80,6 +103,8 @@ def main(names: list[str]) -> int:
             else:
                 print(f"  не удалось скачать {relative}")
                 return 2
+            if relative.endswith(".zip"):
+                unpack(ROOT / relative)
     print(f"Готово. Модели лежат в {ROOT}")
     return 0
 

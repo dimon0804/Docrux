@@ -37,6 +37,8 @@ from paragraf.imaging.loader import UnsupportedFile
 from paragraf.models import Answer
 from paragraf.pipeline import Pipeline, TypeNotDetected
 from paragraf.settings import Settings, get_settings
+from paragraf.speech import MAX_BYTES as SPEECH_MAX_BYTES
+from paragraf.speech import SpeechError, SpeechRecognizer
 
 log = structlog.get_logger()
 
@@ -55,6 +57,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
     settings = settings or get_settings()
     limiter = RateLimiter(settings.rate_limit_per_minute)
     max_bytes = settings.max_upload_mb * 1024 * 1024
+    speech_limit = SPEECH_MAX_BYTES
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -62,6 +65,7 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
         app.state.ocr_slots = asyncio.Semaphore(MAX_PARALLEL_OCR)
         app.state.ocr_waiting = 0
         app.state.selfcheck_running = False
+        app.state.speech = SpeechRecognizer.load(settings.speech_model)
         yield
 
     app = FastAPI(
@@ -299,6 +303,27 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+    @app.get("/api/speech/available")
+    async def speech_available(request: Request) -> dict[str, bool]:
+        return {"available": request.app.state.speech is not None}
+
+    @app.post("/api/speech", responses={413: {"model": Problem}, 422: {"model": Problem}})
+    async def speech(request: Request, _: Limited) -> dict[str, str]:
+        """Текст вопроса из короткой записи WAV 16 кГц. Звук нигде не сохраняется."""
+        recognizer: SpeechRecognizer | None = request.app.state.speech
+        if recognizer is None:
+            raise HTTPException(404, "Голосовые вопросы в этой установке выключены.")
+        data = bytearray()
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data) > speech_limit:
+                raise HTTPException(413, "Запись слишком длинная.")
+        try:
+            text = await run_in_threadpool(recognizer.transcribe, bytes(data))
+        except SpeechError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"text": text}
 
     @app.get("/api/sandbox/example")
     async def sandbox_example() -> dict[str, str]:

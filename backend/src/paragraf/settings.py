@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     pdf_text_layer: Literal["ignore", "prefer"] = "ignore"
     """ignore: PDF распознаётся как картинка. prefer: берётся текстовый слой, если он есть."""
 
+    speech_model: Path | None = None
+    """Папка с моделью Vosk для вопросов голосом. Если не задана или пуста, голос выключен."""
+
     handwriting_model: str | None = None
     """Папка с моделью рукописного текста. Если не задана, почерк не читается."""
 

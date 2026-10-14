@@ -187,6 +187,17 @@ In PowerShell set the variables first: `$env:HANDWRITING_MODEL="/models/trocr-ru
 
 Neither of the two versions we tested reads names reliably, so the model's reading is not treated as a fact. A value enters the card only when the printed OCR and the handwriting model independently read the same thing. Otherwise the field stays empty with a "filled in by hand" note and the model's reading is shown as a hint. On 30 documents filled in with handwriting fonts this cut wrong values in the card from 37 to 8. Reading accuracy did not improve.
 
+## Questions by voice
+
+There is a microphone button next to the question field. Speech is recognized by the small open Vosk model for Russian (about 45 MB) inside the service container; audio is never sent anywhere or stored. The browser converts the recording to 16 kHz WAV itself, so the service needs no extra tools. A recording is limited to 15 seconds and a phrase is recognized in under a second.
+
+```sh
+python tools/fetch_models.py speech
+docker compose up -d
+```
+
+Without the model the microphone button simply does not appear.
+
 ## Telegram bot
 
 The case allows the interface to be a web page or a bot, and we have both. The bot uses the same pipeline as the site, but runs it inside its own process: the file is not sent anywhere else, not even to our API.

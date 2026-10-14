@@ -6,6 +6,7 @@ import type { Analysis } from "@/lib/api";
 import type { Turn } from "@/lib/workspace";
 
 import { SourceChip } from "./SourceChip";
+import { VoiceButton } from "./VoiceButton";
 import { WhyAnswer } from "./WhyAnswer";
 
 type Props = {
@@ -168,6 +169,13 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect, masked 
           maxLength={MAX_LENGTH}
           enterKeyHint="send"
           className="h-12 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-4 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-muted focus:border-brand focus:shadow-[0_0_0_4px_rgb(80_184_72/0.16)]"
+        />
+        <VoiceButton
+          disabled={asking}
+          onText={(text) => {
+            setDraft("");
+            onAsk(text);
+          }}
         />
         <button
           type="submit"
