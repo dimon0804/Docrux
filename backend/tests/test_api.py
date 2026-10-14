@@ -304,4 +304,4 @@ def test_analysis_reports_step_timings(pipeline, open_dir):
     data = (open_dir / "documents" / "open-001.pdf").read_bytes()
     quality = pipeline.analyze(data).analysis.quality
     for key in ("ms_load", "ms_prepare", "ms_ocr", "ms_detect", "ms_extract", "ocr_lines"):
-        assert isinstance(quality[key], int)
+        assert isinstance(quality[key], (int, float)) and quality[key] >= 0
