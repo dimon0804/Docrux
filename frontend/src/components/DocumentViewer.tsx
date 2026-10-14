@@ -58,7 +58,7 @@ export function DocumentViewer({
         <div
           role="group"
           aria-label="Какой снимок показать"
-          className="mb-2 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1 text-[13px] font-medium"
+          className="no-print mb-2 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1 text-[13px] font-medium"
         >
           {[
             { value: false, label: "После выравнивания" },

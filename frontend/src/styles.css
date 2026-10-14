@@ -415,3 +415,43 @@
 .prose tr:last-child td {
   border-bottom: 0;
 }
+
+/* Лист проверки для печати и сохранения в PDF. */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  header,
+  footer,
+  #how,
+  #rules,
+  .no-print,
+  [data-sonner-toaster],
+  [aria-label="Уведомление о файлах cookie"] {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .card,
+  section {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .lg\:sticky {
+    position: static !important;
+  }
+}

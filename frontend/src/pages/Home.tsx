@@ -1,4 +1,11 @@
-import { ChevronDown, FileSearch, RotateCcw, ShieldCheck } from "lucide-react";
+import {
+  ChevronDown,
+  FileJson,
+  FileSearch,
+  Printer,
+  RotateCcw,
+  ShieldCheck,
+} from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +20,7 @@ import { RuleChecklist } from "@/components/RuleChecklist";
 import { RulesSection } from "@/components/RulesSection";
 import { Samples } from "@/components/Samples";
 import { TypePicker } from "@/components/TypePicker";
+import { downloadJson, printReport, resultRecord } from "@/lib/report";
 import { ReferenceProvider, useReference } from "@/lib/rules";
 import { useWorkspace } from "@/lib/workspace";
 
@@ -67,18 +75,60 @@ function Workspace() {
             </h1>
             <p className="mt-1 text-sm text-muted">{state.file?.name}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              reset();
-              setDraft("");
-            }}
-            className="pressable inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-medium hover:border-line-strong"
-          >
-            <RotateCcw aria-hidden="true" className="size-4" />
-            Другой документ
-          </button>
+          <div className="no-print flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={printReport}
+              title="Распечатать или сохранить в PDF"
+              className="pressable inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm font-medium text-text-2 hover:border-line-strong hover:text-text"
+            >
+              <Printer aria-hidden="true" className="size-4" />
+              <span className="hidden sm:inline">Лист проверки</span>
+              <span className="sr-only sm:hidden">
+                Распечатать лист проверки
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const name = state.file?.name ?? "document";
+                downloadJson(
+                  `${name.replace(/\.[^.]+$/, "")}.paragraf.json`,
+                  resultRecord(name, state.analysis!, state.turns),
+                );
+              }}
+              title="Карточка, проверка и ответы в формате results.json"
+              className="pressable inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm font-medium text-text-2 hover:border-line-strong hover:text-text"
+            >
+              <FileJson aria-hidden="true" className="size-4" />
+              <span className="hidden sm:inline">JSON</span>
+              <span className="sr-only sm:hidden">
+                Скачать результат в JSON
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                reset();
+                setDraft("");
+              }}
+              className="pressable inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-medium hover:border-line-strong"
+            >
+              <RotateCcw aria-hidden="true" className="size-4" />
+              Другой документ
+            </button>
+          </div>
         </div>
+        <p className="print-only mb-4 text-[13px] text-text-2">
+          Лист предварительной проверки сервиса «Параграф» от{" "}
+          {new Date().toLocaleDateString("ru-RU", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}{" "}
+          Окончательное решение принимает сотрудник деканата (пункт 1.3
+          Положения).
+        </p>
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
           <div className="lg:sticky lg:top-[84px]">
@@ -121,7 +171,7 @@ function Workspace() {
               focus={state.focus}
               onSelect={select}
             />
-            <details className="card group">
+            <details className="no-print card group">
               <summary className="flex list-none items-center justify-between gap-3 px-5 py-4 text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
                 Распознанный текст
                 <ChevronDown

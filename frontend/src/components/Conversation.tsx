@@ -124,7 +124,7 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect }: Props
       )}
       <div ref={end} />
 
-      <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Примеры вопросов">
+      <ul className="no-print mt-4 flex flex-wrap gap-1.5" aria-label="Примеры вопросов">
         {suggestions(analysis).map((text) => (
           <li key={text}>
             <button
@@ -139,7 +139,7 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect }: Props
         ))}
       </ul>
 
-      <form onSubmit={submit} className="mt-3 flex items-end gap-2">
+      <form onSubmit={submit} className="no-print mt-3 flex items-end gap-2">
         <label htmlFor="question" className="sr-only">
           Ваш вопрос
         </label>
