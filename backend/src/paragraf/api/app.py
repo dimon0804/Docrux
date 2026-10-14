@@ -18,9 +18,12 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from paragraf import __version__
+from paragraf.api import cards
 from paragraf.api.schemas import (
     AnalyzeResponse,
     AskRequest,
+    CheckRequest,
+    CheckResponse,
     DocTypeInfo,
     FieldInfo,
     Problem,
@@ -29,11 +32,9 @@ from paragraf.api.schemas import (
 from paragraf.api.security import RateLimiter, SecurityHeaders
 from paragraf.extraction.generic import OTHER_TYPE
 from paragraf.imaging.loader import UnsupportedFile
-from paragraf.models import Analysis, Answer, FieldValue, Validation
+from paragraf.models import Answer
 from paragraf.pipeline import Pipeline, TypeNotDetected
-from paragraf.rules.validate import validate
 from paragraf.settings import Settings, get_settings
-from paragraf.textnorm import NOT_FOUND
 
 log = structlog.get_logger()
 
@@ -197,76 +198,26 @@ def create_app(settings: Settings | None = None, pipeline: Pipeline | None = Non
     @app.post("/api/ask", responses={422: {"model": Problem}, 429: {"model": Problem}})
     async def ask(_: Limited, service: Service, body: AskRequest) -> Answer:
         if body.document_type == OTHER_TYPE:
-            # Документ незнакомого типа: карточка состоит из строк, найденных на снимке.
-            generic = [
-                FieldValue(
-                    key=item.key,
-                    label=(item.label or item.key)[:120],
-                    type="text",
-                    value=str(item.value)[:300],
-                    found=True,
-                    origin="generic",
-                )
-                for item in body.fields
-                if isinstance(item.value, str) and item.value.strip()
-            ]
-            other = Analysis(
-                document_type=OTHER_TYPE,
-                document_title=(body.document_title or "Документ").strip()[:120],
-                supported=False,
-                type_detected=True,
-                ocr_engine="client",
-                text="",
-                fields=generic,
-                validation=Validation(status="not_applicable", missing_fields=[], sources=[]),
-                width=0,
-                height=0,
-            )
-            return await run_in_threadpool(service.ask, other, body.question.strip(), True)
-        if body.document_type not in service.registry:
+            analysis = cards.restore_other(body.fields, body.document_title)
+        else:
+            if body.document_type not in service.registry:
+                raise HTTPException(422, "Неизвестный тип документа.")
+            doc_type = service.registry.get(body.document_type)
+            analysis = await run_in_threadpool(cards.restore, doc_type, body.fields)
+        return await run_in_threadpool(service.ask, analysis, body.question.strip(), True)
+
+    @app.post("/api/check", responses={422: {"model": Problem}, 429: {"model": Problem}})
+    async def check(_: Limited, service: Service, body: CheckRequest) -> CheckResponse:
+        # У документа незнакомого типа нет обязательных полей: проверять нечего.
+        if body.document_type == OTHER_TYPE or body.document_type not in service.registry:
             raise HTTPException(422, "Неизвестный тип документа.")
         doc_type = service.registry.get(body.document_type)
-        sent = {item.key: item for item in body.fields}
-        fields: list[FieldValue] = []
-        for spec in doc_type.fields:
-            item = sent.get(spec.key)
-            if spec.is_mark:
-                present = bool(item and item.value is True)
-                fields.append(
-                    FieldValue(
-                        key=spec.key,
-                        label=spec.label,
-                        type=spec.type,
-                        value=present,
-                        found=present,
-                        rule=spec.rule,
-                    )
-                )
-                continue
-            value = str(item.value).strip()[:300] if item and isinstance(item.value, str) else ""
-            found = bool(value) and value != NOT_FOUND
-            fields.append(
-                FieldValue(
-                    key=spec.key,
-                    label=spec.label,
-                    type=spec.type,
-                    value=value if found else NOT_FOUND,
-                    found=found,
-                    rule=spec.rule,
-                )
-            )
-        analysis = Analysis(
-            document_type=doc_type.id,
-            document_title=doc_type.title,
-            type_detected=False,
-            ocr_engine="client",
-            text="",
-            fields=fields,
-            validation=validate(doc_type, fields),
-            width=0,
-            height=0,
+        analysis = await run_in_threadpool(cards.restore, doc_type, body.fields)
+        return CheckResponse(
+            fields=analysis.fields,
+            validation=analysis.validation,
+            check=service.check(analysis),
         )
-        return await run_in_threadpool(service.ask, analysis, body.question.strip(), True)
 
     return app
 

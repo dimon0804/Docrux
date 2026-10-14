@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from paragraf.models import Analysis, Answer
+from paragraf.models import Analysis, Answer, FieldValue, Validation
 
 
 class FieldInfo(BaseModel):
@@ -41,11 +41,22 @@ class CardField(BaseModel):
     label: str | None = Field(default=None, max_length=120)
 
 
-class AskRequest(BaseModel):
+class CheckRequest(BaseModel):
+    """Карточка после ручной правки: её нужно проверить заново."""
+
     document_type: str = Field(max_length=64)
-    document_title: str | None = Field(default=None, max_length=120)
     fields: list[CardField] = Field(max_length=64)
+
+
+class AskRequest(CheckRequest):
+    document_title: str | None = Field(default=None, max_length=120)
     question: str = Field(min_length=1, max_length=500)
+
+
+class CheckResponse(BaseModel):
+    fields: list[FieldValue]
+    validation: Validation
+    check: Answer
 
 
 class Problem(BaseModel):
