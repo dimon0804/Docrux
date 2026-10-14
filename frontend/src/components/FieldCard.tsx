@@ -180,22 +180,22 @@ export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [
           {found} из {analysis.fields.length}
         </p>
       </header>
-      <dl className="border-t border-line">
+      <ul className="border-t border-line">
         {analysis.fields.map((field, index) => {
           const active = focus.includes(field.key);
           if (editing === field.key && onEdit) {
             return (
-              <div key={field.key} className="border-b border-line last:border-b-0">
+              <li key={field.key} className="border-b border-line last:border-b-0">
                 <EditRow
                   field={field}
                   onSave={(value) => onEdit(field.key, value)}
                   onCancel={() => setEditing(null)}
                 />
-              </div>
+              </li>
             );
           }
           return (
-            <div
+            <li
               key={field.key}
               className="rise group/row relative border-b border-line last:border-b-0"
               style={{ "--i": index } as React.CSSProperties}
@@ -231,8 +231,8 @@ export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [
                     <Minus className="size-3.5" strokeWidth={3} />
                   )}
                 </span>
-                <dt className="text-[13px] leading-5 text-muted sm:pt-px">{field.label}</dt>
-                <dd
+                <span className="text-[13px] leading-5 text-muted sm:pt-px">{field.label}</span>
+                <span
                   className={`col-start-2 text-[15px] leading-5 sm:col-start-3 ${
                     field.found ? "font-medium text-text" : "text-warn"
                   } ${field.type === "date" || field.type === "code" ? "tabular" : ""} break-words`}
@@ -269,12 +269,12 @@ export function FieldCard({ analysis, title, onSelect, focus, onEdit, edited = [
                   <span className="sr-only">
                     {field.found ? "" : `. Обязательно по пункту ${field.rule} Положения`}
                   </span>
-                </dd>
+                </span>
               </button>
-            </div>
+            </li>
           );
         })}
-      </dl>
+      </ul>
     </section>
   );
 }

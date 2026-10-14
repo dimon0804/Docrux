@@ -84,6 +84,7 @@ export function Dropzone({ file, preview, disabled, onPick }: Props) {
         type="file"
         accept="image/*"
         capture="environment"
+        aria-label="Сфотографировать документ камерой"
         className="sr-only"
         disabled={disabled}
         onChange={(event) => {
