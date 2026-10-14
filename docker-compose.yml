@@ -60,7 +60,36 @@ services:
     mem_limit: 256m
     networks: [internal, public]
 
+  # Telegram-бот: BOT_TOKEN=... docker compose --profile bot up -d --build
+  bot:
+    <<: *hardening
+    profiles: [bot]
+    image: paragraf-api:latest
+    # Образ собирает сервис api, скачивать его неоткуда.
+    pull_policy: never
+    command: ["paragraf", "bot"]
+    environment:
+      # Compose подставляет переменные во весь файл, даже в выключенные профили, поэтому
+      # обязательность здесь сломала бы обычный docker compose up. Без токена бот сам
+      # завершается с понятной ошибкой: docker compose logs bot.
+      PARAGRAF_BOT_TOKEN: ${BOT_TOKEN:-}
+      PARAGRAF_MAX_UPLOAD_MB: "15"
+      PARAGRAF_HANDWRITING_MODEL: ${HANDWRITING_MODEL:-}
+    volumes:
+      - ./models:/models:ro
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    # HTTP-сервера в боте нет, проверка из образа API к нему не подходит.
+    healthcheck:
+      disable: true
+    mem_limit: ${BOT_MEMORY:-2g}
+    cpus: ${BOT_CPUS:-2.0}
+    # Боту нужен выход в интернет к api.telegram.org, а сеть internal его не даёт.
+    # С API и веб-сервером бот не общается, поэтому у него своя сеть.
+    networks: [egress]
+
 networks:
   internal:
     internal: true
   public:
+  egress:
