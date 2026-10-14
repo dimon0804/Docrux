@@ -163,6 +163,23 @@ function unsure(field: FieldValue) {
   );
 }
 
+// Уровень образования по второй паре цифр шифра ОКСО: «38.03.01» — бакалавриат.
+const LEVELS: Record<string, string> = {
+  "01": "СПО",
+  "02": "СПО",
+  "03": "бакалавриат",
+  "04": "магистратура",
+  "05": "специалитет",
+  "06": "аспирантура",
+  "08": "ординатура",
+};
+
+export function programLevel(field: FieldValue): string | null {
+  if (field.key !== "program" || !field.found || typeof field.value !== "string") return null;
+  const match = /^\d{2}\.(\d{2})\.\d{2}/.exec(field.value.trim());
+  return match ? (LEVELS[match[1]!] ?? null) : null;
+}
+
 function shown(field: FieldValue): string {
   if (field.type === "mark") return field.found ? "Есть" : "Не найдена";
   if (!field.found)
@@ -276,6 +293,11 @@ export function FieldCard({
                   {masked && isPersonal(field) && field.type !== "mark"
                     ? String(maskValue(field))
                     : shown(field)}
+                  {programLevel(field) && (
+                    <span className="ml-2 rounded-full bg-brand-soft px-2 py-0.5 align-middle text-[11px] font-medium text-brand-text">
+                      {programLevel(field)}
+                    </span>
+                  )}
                   {field.found && field.origin === "text" && (
                     <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[11px] font-medium text-muted">
                       из текста

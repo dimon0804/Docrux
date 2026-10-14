@@ -94,3 +94,12 @@ def test_remarks_do_not_change_results_json(pipeline, open_dir):
         set(doc) == {"document_id", "document_type", "fields", "validation", "answers"}
         for doc in results["documents"]
     )
+
+
+def test_programme_code_is_checked_against_the_okso_levels(registry):
+    doc_type = registry.get("study_certificate")
+    assert find_remarks(doc_type, _fields(program="38.03.01 Экономика"), TODAY) == []
+    level = find_remarks(doc_type, _fields(program="38.13.01 Экономика"), TODAY)
+    assert "уровень образования" in level[0].text
+    group = find_remarks(doc_type, _fields(program="77.03.01 Экономика"), TODAY)
+    assert "укрупнённой группы" in group[0].text

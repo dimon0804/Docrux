@@ -19,7 +19,21 @@ from paragraf.models import FieldValue, Remark
 # Даты, которые описывают сам документ, а не период: они не могут быть в будущем.
 _DOCUMENT_DATES = ("issue_date", "application_date")
 _LONG_PERIOD_DAYS = {"leave": 2 * 366, "internship": 366, "study": 7 * 366}
-_PROGRAM_CODE = re.compile(r"^\d{2}\.\d{2}\.\d{2}\b")
+_PROGRAM_CODE = re.compile(r"^(\d{2})\.(\d{2})\.(\d{2})\b")
+# Вторая пара цифр шифра по классификатору ОКСО — уровень образования.
+LEVELS = {
+    "01": "СПО, профессия",
+    "02": "СПО, специальность",
+    "03": "бакалавриат",
+    "04": "магистратура",
+    "05": "специалитет",
+    "06": "аспирантура",
+    "07": "адъюнктура",
+    "08": "ординатура",
+    "09": "ассистентура-стажировка",
+}
+MAX_GROUP = 58
+"""Укрупнённые группы направлений в ОКСО занимают номера от 01 до 58."""
 _KNOWN_GRADES = {
     "отлично",
     "хорошо",
@@ -110,8 +124,21 @@ def find_remarks(
     program = by_key.get("program")
     if program and program.found and isinstance(program.value, str):
         value = program.value.strip()
-        if re.match(r"^\d", value) and not _PROGRAM_CODE.match(value):
+        code = _PROGRAM_CODE.match(value)
+        if re.match(r"^\d", value) and not code:
             add("Шифр направления не похож на формат 00.00.00.", "program")
+        elif code and code.group(2) not in LEVELS:
+            add(
+                f"В шифре {code.group(0)} вторая пара цифр «{code.group(2)}» не обозначает "
+                "уровень образования по классификатору ОКСО.",
+                "program",
+            )
+        elif code and not 1 <= int(code.group(1)) <= MAX_GROUP:
+            add(
+                f"В шифре {code.group(0)} нет такой укрупнённой группы направлений: "
+                f"«{code.group(1)}».",
+                "program",
+            )
 
     grade = by_key.get("grade")
     if (

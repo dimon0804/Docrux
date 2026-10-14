@@ -170,3 +170,14 @@ describe("resultRecord after a manual edit", () => {
     expect(record.documents[0]!.answers.map((answer) => answer.question)).toEqual(["Вопрос 2"]);
   });
 });
+
+describe("programLevel", () => {
+  it("reads the education level from the OKSO code", async () => {
+    const { programLevel } = await import("@/components/FieldCard");
+    const field = (value: string) =>
+      ({ key: "program", found: true, value }) as unknown as Parameters<typeof programLevel>[0];
+    expect(programLevel(field("38.03.01 Экономика"))).toBe("бакалавриат");
+    expect(programLevel(field("38.04.01 Экономика"))).toBe("магистратура");
+    expect(programLevel(field("Экономика"))).toBeNull();
+  });
+});
