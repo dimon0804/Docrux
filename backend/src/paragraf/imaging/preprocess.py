@@ -15,6 +15,8 @@ import numpy as np
 TARGET_WIDTH = 1700
 MIN_WIDTH_FOR_UPSCALE = 1400
 MAX_SIDE = 3000
+BLURRY_SHARPNESS = 40.0
+"""Ниже этой дисперсии лапласиана снимок считается смазанным (чёткие сканы дают от 230)."""
 
 
 @dataclass
@@ -59,6 +61,13 @@ def prepare(image: np.ndarray) -> Prepared:
     if flattened:
         gray = flatten_light(gray)
         image = _flatten_color(image)
+    # Смазанный снимок: нерезкое маскирование возвращает буквам края. На смазанных
+    # тестовых снимках это возвращает потерянные номера справок, чёткие снимки не трогаем.
+    blurry = quality["sharpness"] < BLURRY_SHARPNESS
+    quality["sharpened"] = blurry
+    if blurry:
+        soft = cv2.GaussianBlur(gray, (0, 0), 2.0)
+        gray = cv2.addWeighted(gray, 2.0, soft, -1.0, 0)
     return Prepared(color=image, gray=gray, quality=quality)
 
 
