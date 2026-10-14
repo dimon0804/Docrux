@@ -152,7 +152,7 @@ Neither of the two versions we tested reads names reliably, so the model's readi
 
 No external OCR or language model APIs are used. Everything runs on the CPU of an ordinary laptop.
 
-The theme switch and the word loader come from the open [Uiverse.io](https://uiverse.io) collection (by Galahhad and kennyotsu, MIT) and were adapted to the service. Interface colors are built on the brand green of Center-invest Bank.
+The word loader comes from the open [Uiverse.io](https://uiverse.io) collection (by kennyotsu, MIT) and was adapted to the service. Interface colors are built on the brand green of Center-invest Bank.
 
 | Purpose | Tool |
 | --- | --- |

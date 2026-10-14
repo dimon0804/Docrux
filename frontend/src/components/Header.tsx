@@ -5,7 +5,7 @@ import type { Theme } from "@/lib/theme";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
-type Props = { theme: Theme; onToggleTheme: () => void };
+type Props = { theme: Theme; onToggleTheme: (origin?: { x: number; y: number }) => void };
 
 export function Header({ theme, onToggleTheme }: Props) {
   return (

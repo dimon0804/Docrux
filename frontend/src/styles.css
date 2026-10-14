@@ -178,6 +178,38 @@
     transform: scale(0.97);
   }
 
+  /* Круг новой темы рисуется анимацией из theme.ts, стандартный переход не нужен. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  /* Смена темы: одна иконка уходит с поворотом, другая появляется на её месте. */
+  .theme-toggle__icon {
+    grid-area: 1 / 1;
+    transition:
+      transform 360ms var(--ease-out),
+      opacity 200ms ease;
+  }
+
+  .theme-toggle__moon,
+  .theme-toggle[data-dark] .theme-toggle__sun {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+  }
+
+  .theme-toggle[data-dark] .theme-toggle__moon {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .theme-toggle__icon {
+      transition: opacity 120ms ease;
+    }
+  }
+
   .card {
     background: var(--surface);
     border: 1px solid var(--line);

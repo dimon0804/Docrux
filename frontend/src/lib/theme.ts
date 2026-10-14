@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 
 export type Theme = "light" | "dark";
 
@@ -33,15 +34,45 @@ export function useTheme() {
     return () => media.removeEventListener("change", follow);
   }, []);
 
-  const toggle = useCallback(() => {
+  const toggle = useCallback((origin?: { x: number; y: number }) => {
     const next: Theme = current() === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem(KEY, next);
-    } catch {
-      // Хранилище недоступно: тема сменится только до перезагрузки.
+    const apply = () => {
+      document.documentElement.dataset.theme = next;
+      try {
+        localStorage.setItem(KEY, next);
+      } catch {
+        // Хранилище недоступно: тема сменится только до перезагрузки.
+      }
+      setTheme(next);
+    };
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!document.startViewTransition || calm || !origin) {
+      apply();
+      return;
     }
-    setTheme(next);
+    // Новая тема раскрывается кругом от кнопки, которую нажали.
+    const transition = document.startViewTransition(() => flushSync(apply));
+    const radius = Math.hypot(
+      Math.max(origin.x, window.innerWidth - origin.x),
+      Math.max(origin.y, window.innerHeight - origin.y),
+    );
+    transition.ready
+      .then(() => {
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${origin.x}px ${origin.y}px)`,
+              `circle(${radius}px at ${origin.x}px ${origin.y}px)`,
+            ],
+          },
+          {
+            duration: 520,
+            easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+      })
+      .catch(() => {});
   }, []);
 
   return { theme, toggle };
