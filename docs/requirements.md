@@ -59,6 +59,9 @@
 | Несколько фото как страницы | `load_pages`, `POST /api/analyze` с несколькими файлами | `test_several_files_are_read_as_pages_of_one_document` |
 | Сверка студентов в пакете | `lib/students.ts` | `students.test.ts` |
 | Мониторинг | `metrics.py`, профиль `monitoring` (Prometheus и Grafana) | `test_metrics_count_documents_and_refusals` |
+| Вопрос о поле другого типа документа: честный отказ вместо цитаты чужого пункта | `Answerer._foreign_field` | `test_scope.py` |
+| Цель, которую Положение не оценивает (перевод, стипендия, зачёт практики): к проверке добавляется пункт 3.5, 4.4 или 5.5 | `Answerer._limits` | `test_scope.py`; источники проверки не меняются |
+| Бот за прокси и переподключение при сбоях связи | `DOCRUX_BOT_PROXY`, `bot.app.poll` | `test_bot_waits_out_a_network_failure`, `test_bot_stops_on_a_rejected_token` |
 
 ## Формат results.json
 
@@ -103,5 +106,6 @@
 | --- | --- |
 | Репозиторий с README: как установить и запустить | готово |
 | `results.json` на закрытом наборе | команда готова и проверена на открытом наборе; закрытый набор организаторы ещё не выдали |
-| Видео-демо до 3 минут | `docs/pitch/demo.mp4`, 2 минуты 4 секунды, с подписями и без озвучки; текст для голоса в `docs/pitch/demo-script.md` |
+| Видео-демо до 3 минут | `docs/pitch/demo.mp4`, 2 минуты 28 секунд, с подписями и без озвучки; текст для голоса в `docs/pitch/demo-script.md` |
 | Презентация до 10 слайдов | есть текст слайдов в `docs/pitch/slides.md`, файл презентации не собран |
+| Выступление на защите | `docs/pitch/speech.md`, три минуты |

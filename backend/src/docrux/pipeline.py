@@ -61,7 +61,9 @@ class Pipeline:
         self.rulebook = rulebook
         self.engine = engine
         self.settings = settings or get_settings()
-        self.answerer = Answerer(rulebook, load_hints(self.settings.hints_path))
+        self.answerer = Answerer(
+            rulebook, load_hints(self.settings.hints_path), types=list(registry)
+        )
         self.handwriting = HandwritingReader.load(self.settings.handwriting_model)
 
     @classmethod

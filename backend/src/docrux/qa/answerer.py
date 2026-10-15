@@ -76,6 +76,20 @@ _ABOUT = re.compile(
 _PROCEDURE = re.compile(
     r"^(как|куда|где|когда)\s+(мне\s+|можно\s+|нужно\s+|надо\s+)?\w+(ть|ти|чь)(ся)?\b"
 )
+# «Хватит ли справки для перевода на 2 курс?»: комплектность проверяется как обычно,
+# но цель из вопроса Положение не оценивает, и об этом стоит сказать прямо.
+# Ключ: пункт, в котором сказано, что эти условия Положением не установлены.
+_LIMITS = {
+    "3.5": re.compile(r"перев[её]д|переве|перезач|задолженн|\bкурс"),
+    "4.4": re.compile(r"стипенди|выплат|длительн|срок\w*\s+отпуск|подтвержда|допустим|уважительн"),
+    "5.5": re.compile(r"зач[её]т\w*\s+практик|засчита|отч[её]т|выставл"),
+}
+# «Какая дата выдачи?» у заявления на отпуск: такого поля у документа нет вовсе.
+_ASKS_VALUE = re.compile(
+    r"^(как\w*|когда|кто|чей|чья|чь[её]|сколько|где|укажи|назови|скажи|подскажи)\b"
+    r"|\b(указан\w*|написан\w*|стоит)\b"
+)
+
 # «Обязательна ли подпись?», «Нужна ли печать?»: спрашивают о требовании Положения.
 _REQUIREMENT = re.compile(
     r"\b(обязательн\w*|нужн\w*|нужен|необходим\w*)\s+ли\b|\b(требу\w+|должн\w*)\b"
@@ -90,9 +104,15 @@ class Answerer:
     пунктам Положения и работа с документами незнакомых типов.
     """
 
-    def __init__(self, rulebook: RuleBook, hints: dict[str, list[str]] | None = None):
+    def __init__(
+        self,
+        rulebook: RuleBook,
+        hints: dict[str, list[str]] | None = None,
+        types: list[DocType] | None = None,
+    ):
         self.rulebook = rulebook
         self.index = RuleIndex(rulebook, hints)
+        self.types = list(types or [])
 
     def answer(
         self,
@@ -142,6 +162,10 @@ class Answerer:
         if assistant:
             if _ABOUT.search(plain):
                 return self._about(analysis, question)
+            if not _REQUIREMENT.search(plain) and not _PROCEDURE.search(plain):
+                foreign = self._foreign_field(doc_type, question, plain)
+                if foreign is not None:
+                    return foreign
             found = self._rule(question, section)
             if found is not None:
                 return found
@@ -169,6 +193,56 @@ class Answerer:
             ),
             sources=[f"rule:{DECISION_RULE}"],
         )
+
+    def _foreign_field(self, doc_type: DocType, question: str, plain: str) -> Answer | None:
+        """Вопрос о значении поля, которого у этого типа документа нет.
+
+        Иначе поиск по Положению нашёл бы пункт, где такое поле требуется от другого
+        документа, и ответ выглядел бы так, будто значение где-то есть.
+        """
+        if not _ASKS_VALUE.search(plain):
+            return None
+        owners: list[DocType] = []
+        label = ""
+        for other in self.types:
+            if other.id == doc_type.id:
+                continue
+            intent = detect(other, question)
+            if intent.kind == "field" and intent.field is not None:
+                owners.append(other)
+                label = label or intent.field.label
+        if not owners:
+            return None
+        where = " и ".join(f"«{other.title.lower()}»" for other in owners)
+        text = (
+            f"В документе «{doc_type.title.lower()}» поля «{_lower_first(label)}» нет: такое поле "
+            f"бывает в документах вида {where}. Придумывать значение сервис не будет. "
+            "Если вопрос о другом документе, пришлите его."
+        )
+        return Answer(
+            question=question,
+            intent="unknown",
+            answerable=False,
+            value=None,
+            answer=text,
+            sources=[],
+        )
+
+    def _limits(self, doc_type: DocType, question: str) -> str:
+        """Пункт Положения о том, чего этот документ не решает, если вопрос об этом."""
+        plain = _plain(question)
+        section = doc_type.rules[0].split(".")[0] if doc_type.rules else ""
+        notes = []
+        for number, pattern in _LIMITS.items():
+            if (
+                number.split(".")[0] == section
+                and number in self.rulebook
+                and pattern.search(plain)
+            ):
+                notes.append(
+                    f"При этом пункт {number} Положения: «{self.rulebook.get(number).text}»"
+                )
+        return (" " + " ".join(notes)) if notes else ""
 
     def _rule(self, question: str, section: str | None) -> Answer | None:
         """Ответ цитатой из Положения, если нашёлся подходящий пункт."""
@@ -282,6 +356,8 @@ class Answerer:
                 f"{_points_word(rules)} {_rule_list(rules)} Положения. Остальные поля прочитаны. "
                 "Окончательное решение примет сотрудник деканата."
             )
+        if question:
+            text += self._limits(doc_type, question)
         return Answer(
             question=question or COMPLETENESS_QUESTION,
             intent="completeness",

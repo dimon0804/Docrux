@@ -22,7 +22,7 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 | --- | --- |
 | ![Batch checking](docs/screenshots/batch.png) | ![Document type sandbox](docs/screenshots/sandbox.png) |
 
-A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 4 seconds.
+A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 28 seconds.
 
 ## Features
 
@@ -237,6 +237,10 @@ BOT_TOKEN=123456:ABC... docker compose --profile bot up -d --build
 In PowerShell: `$env:BOT_TOKEN="123456:ABC..."; docker compose --profile bot up -d --build`. Without the `bot` profile, `docker compose up` starts only the site, as before. If the token is missing, the bot exits right after start and the reason is shown in `docker compose logs bot`.
 
 The bot needs internet access to `api.telegram.org`, so it runs on a separate network rather than on the API's internal one. It keeps the card of the last document in memory for 30 minutes to answer questions and writes nothing to disk. The file itself is not kept after processing; to re-read it as another type the bot downloads it from Telegram again.
+
+Our bot: [@docrux_bot](https://t.me/docrux_bot).
+
+If the server cannot reach Telegram directly, set a proxy in `BOT_PROXY` (in `.env` next to `docker-compose.yml` or in the environment): `socks5://user:password@host:port` or `http://...`. When Telegram or the proxy is briefly unavailable, the bot does not exit; it retries with a growing pause of up to two minutes. A rejected token stops it right away.
 
 Without Docker, run `docrux bot` after `pip install -e ".[bot]"`; the token is read from `DOCRUX_BOT_TOKEN`.
 
