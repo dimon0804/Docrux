@@ -9,7 +9,7 @@ RUN npm run build
 
 
 FROM caddy:2-alpine AS runtime
-LABEL org.opencontainers.image.title="Параграф Web" \
+LABEL org.opencontainers.image.title="Докрукс Web" \
       org.opencontainers.image.licenses="MIT"
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /web/dist /srv

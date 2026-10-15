@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from paragraf import textnorm
-from paragraf.doctypes import DocTypeRegistry
-from paragraf.extraction import freeform
-from paragraf.extraction.classify import detect_type
-from paragraf.extraction.generic import generic_fields, guess_title
-from paragraf.models import Analysis, Box, FieldValue, Line, Validation, Word
-from paragraf.pipeline import Pipeline
+from docrux import textnorm
+from docrux.doctypes import DocTypeRegistry
+from docrux.extraction import freeform
+from docrux.extraction.classify import detect_type
+from docrux.extraction.generic import generic_fields, guess_title
+from docrux.models import Analysis, Box, FieldValue, Line, Validation, Word
+from docrux.pipeline import Pipeline
 
 
 def lines(text: str) -> list[Line]:
@@ -331,7 +331,7 @@ def test_hints_do_not_weaken_refusals(pipeline: Pipeline, study_doc: Analysis, q
 
 
 def test_hint_must_have_two_meaningful_words(rulebook):
-    from paragraf.qa.retrieval import RuleIndex
+    from docrux.qa.retrieval import RuleIndex
 
     with pytest.raises(ValueError, match="слишком короткая"):
         RuleIndex(rulebook, {"4.4": ["отпуск"]})
@@ -344,8 +344,8 @@ def test_every_hint_in_the_config_is_valid(pipeline: Pipeline):
 
 
 def test_generic_card_splits_two_pairs_on_one_line():
-    from paragraf.extraction.generic import generic_fields
-    from paragraf.models import Box, Line
+    from docrux.extraction.generic import generic_fields
+    from docrux.models import Box, Line
 
     def line(text):
         return Line(text=text, box=Box(x=0, y=0, w=1, h=0.02), confidence=0.9, words=[])

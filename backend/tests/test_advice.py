@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from paragraf.imaging import advice
-from paragraf.models import Box, Line, Word
+from docrux.imaging import advice
+from docrux.models import Box, Line, Word
 
 # Так выглядят сведения о чистом скане открытого набора.
 CLEAN = {

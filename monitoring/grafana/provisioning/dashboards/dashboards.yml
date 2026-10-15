@@ -1,6 +1,6 @@
 apiVersion: 1
 providers:
-  - name: paragraf
+  - name: docrux
     folder: ""
     type: file
     disableDeletion: true

@@ -4,14 +4,14 @@ import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, ".", "PARAGRAF_");
+  const env = loadEnv(mode, ".", "DOCRUX_");
   return {
     plugins: [react(), tailwindcss()],
     resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
     server: {
       port: 5173,
       proxy: {
-        "/api": { target: env.PARAGRAF_API ?? "http://localhost:8000", changeOrigin: true },
+        "/api": { target: env.DOCRUX_API ?? "http://localhost:8000", changeOrigin: true },
       },
     },
     build: { target: "es2022", sourcemap: false },

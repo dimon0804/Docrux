@@ -22,7 +22,7 @@ from aiogram.client.telegram import TelegramAPIServer  # noqa: E402
 from aiogram.enums import ParseMode  # noqa: E402
 from aiogram.types import Update  # noqa: E402
 
-from paragraf.bot.app import build_router  # noqa: E402
+from docrux.bot.app import BotTokenMissing, build_router, poll  # noqa: E402
 
 TOKEN = "123456:TEST-token-for-local-check"
 STUDENT = {"id": 7, "is_bot": False, "first_name": "Студент"}
@@ -129,3 +129,84 @@ def test_bot_handles_a_whole_conversation(pipeline, settings, open_dir):
     assert answers[-1]["text"].startswith("Эта кнопка относится к прошлому документу")
     # В группе бот молчит: последнее сообщение по-прежнему ответ на кнопку.
     assert len(sent) == 5
+
+
+async def _flaky_telegram(answer_me) -> tuple[list[str], str, aiohttp_web.AppRunner]:
+    """Поддельный Telegram, у которого getMe ведёт себя как задано, а остальное работает."""
+    calls: list[str] = []
+
+    async def method(request):
+        name = request.match_info["method"]
+        calls.append(name)
+        if name == "getMe":
+            return await answer_me(request, calls.count("getMe"))
+        if name == "getUpdates":
+            await asyncio.sleep(0.05)
+            return aiohttp_web.json_response({"ok": True, "result": []})
+        return aiohttp_web.json_response({"ok": True, "result": True})
+
+    app = aiohttp_web.Application()
+    app.router.add_post("/bot{token}/{method}", method)
+    runner = aiohttp_web.AppRunner(app)
+    await runner.setup()
+    site = aiohttp_web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+    return calls, f"http://127.0.0.1:{port}", runner
+
+
+def _bot(base: str) -> Bot:
+    session = AiohttpSession(api=TelegramAPIServer.from_base(base))
+    return Bot(TOKEN, session=session)
+
+
+def test_bot_waits_out_a_network_failure(pipeline, settings):
+    me = {"id": 1, "is_bot": True, "first_name": "Докрукс", "username": "docrux_bot"}
+
+    async def answer_me(request, attempt):
+        if attempt == 1:
+            # Обрыв соединения, как у прокси, который перестал отвечать.
+            request.transport.close()
+            return aiohttp_web.Response()
+        return aiohttp_web.json_response({"ok": True, "result": me})
+
+    async def scenario():
+        calls, base, runner = await _flaky_telegram(answer_me)
+        bot = _bot(base)
+        dispatcher = Dispatcher()
+        dispatcher.include_router(build_router(pipeline, settings))
+        task = asyncio.create_task(poll(bot, dispatcher, settings, first_delay=0.05))
+        for _ in range(200):
+            if "getUpdates" in calls:
+                break
+            await asyncio.sleep(0.02)
+        await dispatcher.stop_polling()
+        await asyncio.wait_for(task, 5)
+        await bot.session.close()
+        await runner.cleanup()
+        return calls
+
+    calls = asyncio.run(scenario())
+    assert calls.count("getMe") == 2
+    assert "setMyDescription" in calls and "setMyCommands" in calls
+    assert "getUpdates" in calls
+
+
+def test_bot_stops_on_a_rejected_token(pipeline, settings):
+    async def answer_me(request, attempt):
+        body = {"ok": False, "error_code": 401, "description": "Unauthorized"}
+        return aiohttp_web.json_response(body, status=401)
+
+    async def scenario():
+        _calls, base, runner = await _flaky_telegram(answer_me)
+        bot = _bot(base)
+        dispatcher = Dispatcher()
+        dispatcher.include_router(build_router(pipeline, settings))
+        try:
+            with pytest.raises(BotTokenMissing):
+                await asyncio.wait_for(poll(bot, dispatcher, settings, first_delay=0.05), 5)
+        finally:
+            await bot.session.close()
+            await runner.cleanup()
+
+    asyncio.run(scenario())

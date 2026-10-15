@@ -3,7 +3,7 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "paragraf"
+name = "docrux"
 version = "0.1.0"
 description = "Цифровой секретарь деканата: читает фото документа и отвечает со ссылкой на пункт Положения"
 requires-python = ">=3.11"
@@ -34,7 +34,7 @@ handwriting = [
     "tokenizers>=0.20",
 ]
 paddle = ["rapidocr>=3.0", "onnxruntime>=1.19"]
-bot = ["aiogram>=3.13"]
+bot = ["aiogram>=3.13", "aiohttp-socks>=0.10"]
 speech = ["vosk>=0.3.45"]
 dev = [
     "pytest>=8.3",
@@ -47,10 +47,10 @@ dev = [
 ]
 
 [project.scripts]
-paragraf = "paragraf.cli:app"
+docrux = "docrux.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/paragraf"]
+packages = ["src/docrux"]
 
 [tool.ruff]
 line-length = 100

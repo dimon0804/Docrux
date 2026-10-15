@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from paragraf.pipeline import Pipeline
+from docrux.pipeline import Pipeline
 
 
 @pytest.fixture(scope="module")

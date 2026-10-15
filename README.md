@@ -1,4 +1,12 @@
-# Параграф
+<img src="docs/logo.svg" width="72" alt="" align="left">
+
+# Докрукс
+
+**ИИ, который видит документ насквозь.**
+
+<br clear="left">
+
+Название сложено из document и crux («суть», «узел»): сервис добирается до сути документа и сверяет её с Положением без лишней бюрократии. Знак — искра поверх раскрытого листа.
 
 Цифровой секретарь деканата. Студент загружает фото справки или заявления и задаёт вопрос. Сервис читает снимок, заполняет карточку полей, проверяет обязательные сведения и отвечает со ссылкой на пункт Положения.
 
@@ -66,8 +74,8 @@
 Нужен только Docker.
 
 ```sh
-git clone https://github.com/dimon0804/PARAGRAF.git paragraf
-cd paragraf
+git clone https://github.com/dimon0804/Docrux.git docrux
+cd docrux
 docker compose up --build
 ```
 
@@ -92,7 +100,7 @@ APT_MIRROR=mirror.yandex.ru docker compose up --build
 
 Если Docker под рукой нет, откройте ноутбук: он ставит сервис на бесплатной машине Colab, проверяет открытый набор и собирает `results.json` для любого набора в том же формате.
 
-[![Открыть в Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/PARAGRAF/blob/main/notebooks/paragraf_colab.ipynb)
+[![Открыть в Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/Docrux/blob/main/notebooks/docrux_colab.ipynb)
 
 ## Как получить results.json
 
@@ -101,8 +109,8 @@ APT_MIRROR=mirror.yandex.ru docker compose up --build
 ```sh
 docker compose build api
 mkdir -p out
-docker run --rm -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" paragraf-api \
-  paragraf batch /data/documents.json --out /out/results.json
+docker run --rm -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" docrux-api \
+  docrux batch /data/documents.json --out /out/results.json
 ```
 
 Если команда сообщает, что не может записать файл, дайте папке права на запись: `chmod 777 out`. Контейнер работает от обычного пользователя, а не от root.
@@ -122,8 +130,8 @@ python data/open/evaluate.py \
 Один документ можно разобрать прямо из консоли:
 
 ```sh
-docker run --rm -v "$PWD/data/open:/data" paragraf-api \
-  paragraf read /data/documents/open-002.png -q "Какова дата выдачи?"
+docker run --rm -v "$PWD/data/open:/data" docrux-api \
+  docrux read /data/documents/open-002.png -q "Какова дата выдачи?"
 ```
 
 ## Качество
@@ -270,7 +278,7 @@ BOT_TOKEN=123456:ABC... docker compose --profile bot up -d --build
 
 Боту нужен выход в интернет к `api.telegram.org`, поэтому он работает в отдельной сети, а не во внутренней сети API. Карточку последнего документа бот помнит в памяти 30 минут, чтобы отвечать на вопросы, и ничего не записывает на диск. Сам файл после разбора не хранится, для повторного разбора с другим типом бот заново скачивает его из Telegram.
 
-Без Docker бот запускается командой `paragraf bot` после `pip install -e ".[bot]"`, токен берётся из переменной `PARAGRAF_BOT_TOKEN`.
+Без Docker бот запускается командой `docrux bot` после `pip install -e ".[bot]"`, токен берётся из переменной `DOCRUX_BOT_TOKEN`.
 
 ## Инструменты и модели
 
@@ -313,7 +321,7 @@ cd backend
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 pytest
-uvicorn paragraf.api.app:app --reload
+uvicorn docrux.api.app:app --reload
 
 # интерфейс
 cd frontend

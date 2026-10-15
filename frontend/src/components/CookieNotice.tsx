@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 
-const KEY = "paragraf:notice";
+const KEY = "docrux:notice";
 
 function seen(): boolean {
   try {

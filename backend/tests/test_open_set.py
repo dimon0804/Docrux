@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from paragraf.batch import run_batch
-from paragraf.pipeline import Pipeline
+from docrux.batch import run_batch
+from docrux.pipeline import Pipeline
 
 
 def _evaluator(open_dir: Path):

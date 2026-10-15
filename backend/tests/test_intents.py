@@ -1,7 +1,7 @@
 import pytest
 
-from paragraf.doctypes import DocTypeRegistry
-from paragraf.qa.intents import detect
+from docrux.doctypes import DocTypeRegistry
+from docrux.qa.intents import detect
 
 STUDY = "study_certificate"
 LEAVE = "academic_leave_application"

@@ -1,9 +1,9 @@
 import pytest
 
-from paragraf.doctypes import DocType, DocTypeRegistry
-from paragraf.models import FieldValue
-from paragraf.rules.kb import RuleBook
-from paragraf.rules.validate import validate
+from docrux.doctypes import DocType, DocTypeRegistry
+from docrux.models import FieldValue
+from docrux.rules.kb import RuleBook
+from docrux.rules.validate import validate
 
 
 def test_rulebook_has_all_points(rulebook: RuleBook):

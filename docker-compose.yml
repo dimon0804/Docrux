@@ -1,7 +1,7 @@
 # Запуск: docker compose up --build
 # Сервис откроется на http://localhost:8080
 
-name: paragraf
+name: docrux
 
 x-hardening: &hardening
   restart: unless-stopped
@@ -24,16 +24,16 @@ services:
       dockerfile: backend/Dockerfile
       args:
         APT_MIRROR: ${APT_MIRROR:-deb.debian.org}
-    image: paragraf-api:latest
+    image: docrux-api:latest
     environment:
-      PARAGRAF_TRUST_PROXY: "true"
-      PARAGRAF_RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
-      PARAGRAF_MAX_UPLOAD_MB: "15"
+      DOCRUX_TRUST_PROXY: "true"
+      DOCRUX_RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
+      DOCRUX_MAX_UPLOAD_MB: "15"
       # Необязательная модель рукописного текста: см. раздел «Рукописный текст» в README.
-      PARAGRAF_HANDWRITING_MODEL: ${HANDWRITING_MODEL:-}
+      DOCRUX_HANDWRITING_MODEL: ${HANDWRITING_MODEL:-}
       # Вопросы голосом: модель Vosk в models/speech-ru (python tools/fetch_models.py speech).
       # Если папки нет, кнопка микрофона просто не появляется.
-      PARAGRAF_SPEECH_MODEL: ${SPEECH_MODEL:-/models/speech-ru}
+      DOCRUX_SPEECH_MODEL: ${SPEECH_MODEL:-/models/speech-ru}
       # Счётчики Prometheus от всех процессов uvicorn собираются в одной папке в tmpfs.
       PROMETHEUS_MULTIPROC_DIR: /tmp/metrics
     volumes:
@@ -50,7 +50,7 @@ services:
     <<: *hardening
     build:
       context: frontend
-    image: paragraf-web:latest
+    image: docrux-web:latest
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:8080}
       API_UPSTREAM: api:8000
@@ -69,10 +69,10 @@ services:
   bot:
     <<: *hardening
     profiles: [bot]
-    image: paragraf-api:latest
+    image: docrux-api:latest
     # Образ собирает сервис api, скачивать его неоткуда.
     pull_policy: never
-    command: ["paragraf", "bot"]
+    command: ["docrux", "bot"]
     # Без токена или с неверным токеном бот завершается с ошибкой: несколько попыток,
     # а не бесконечный перезапуск.
     restart: "on-failure:3"
@@ -80,11 +80,13 @@ services:
       # Compose подставляет переменные во весь файл, даже в выключенные профили, поэтому
       # обязательность здесь сломала бы обычный docker compose up. Без токена бот сам
       # завершается с понятной ошибкой: docker compose logs bot.
-      PARAGRAF_BOT_TOKEN: ${BOT_TOKEN:-}
+      DOCRUX_BOT_TOKEN: ${BOT_TOKEN:-}
       # Адрес сайта по HTTPS: бот откроет сервис прямо в Telegram.
-      PARAGRAF_BOT_WEB_APP_URL: ${WEB_APP_URL:-}
-      PARAGRAF_MAX_UPLOAD_MB: "15"
-      PARAGRAF_HANDWRITING_MODEL: ${HANDWRITING_MODEL:-}
+      DOCRUX_BOT_WEB_APP_URL: ${WEB_APP_URL:-}
+      # Если сервер не достаёт до Telegram напрямую: socks5://логин:пароль@адрес:порт или http://...
+      DOCRUX_BOT_PROXY: ${BOT_PROXY:-}
+      DOCRUX_MAX_UPLOAD_MB: "15"
+      DOCRUX_HANDWRITING_MODEL: ${HANDWRITING_MODEL:-}
     volumes:
       - ./models:/models:ro
     tmpfs:
@@ -120,10 +122,10 @@ services:
     profiles: [monitoring]
     image: grafana/grafana-oss:12.1.1
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-paragraf}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-docrux}
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/paragraf.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/docrux.json
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_NEWS_NEWS_FEED_ENABLED: "false"

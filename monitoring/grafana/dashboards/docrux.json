@@ -1,0 +1,138 @@
+{
+  "uid": "docrux",
+  "title": "Докрукс",
+  "description": "Документы, скорость разбора, ответы и отказы сервиса",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Документов разобрано",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum(docrux_documents_total)" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "#50b848" } }, "overrides": [] }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Время разбора, медиана",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum(rate(docrux_analyze_seconds_bucket[15m])) by (le))"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "s", "decimals": 2 }, "overrides": [] }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Честных отказов",
+      "description": "Вопросы, на которые нет ответа ни в документе, ни в Положении",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum(docrux_answers_total{answerable=\"false\"})" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "В очереди на распознавание",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [{ "refId": "A", "expr": "sum(docrux_ocr_waiting)" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Документы в минуту по итогу проверки",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (rate(docrux_documents_total[5m])) * 60",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Время разбора: медиана и 95-й процентиль",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum(rate(docrux_analyze_seconds_bucket[5m])) by (le))",
+          "legendFormat": "медиана"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum(rate(docrux_analyze_seconds_bucket[5m])) by (le))",
+          "legendFormat": "95%"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "id": 7,
+      "type": "piechart",
+      "title": "Документы по типам",
+      "gridPos": { "x": 0, "y": 14, "w": 8, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (document_type) (docrux_documents_total)",
+          "legendFormat": "{{document_type}}"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "id": 8,
+      "type": "bargauge",
+      "title": "Ответы по виду вопроса",
+      "gridPos": { "x": 8, "y": 14, "w": 8, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (intent) (docrux_answers_total)",
+          "legendFormat": "{{intent}}"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal" }
+    },
+    {
+      "id": 9,
+      "type": "bargauge",
+      "title": "Отклонённые запросы по причине",
+      "gridPos": { "x": 16, "y": 14, "w": 8, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "docrux-prometheus" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (reason) (docrux_rejected_total)",
+          "legendFormat": "{{reason}}"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal" }
+    }
+  ]
+}

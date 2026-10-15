@@ -60,11 +60,11 @@ export function Autopilot() {
     };
     const onStart = () => void start();
     window.addEventListener("keydown", onKey);
-    window.addEventListener("paragraf:autopilot", onStart);
+    window.addEventListener("docrux:autopilot", onStart);
     if (new URLSearchParams(location.search).has("demo")) void start();
     return () => {
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("paragraf:autopilot", onStart);
+      window.removeEventListener("docrux:autopilot", onStart);
     };
   }, [start, stop]);
 

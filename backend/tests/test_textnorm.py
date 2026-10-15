@@ -1,6 +1,6 @@
 import pytest
 
-from paragraf import textnorm
+from docrux import textnorm
 
 
 @pytest.mark.parametrize(

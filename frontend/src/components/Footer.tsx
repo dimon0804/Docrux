@@ -8,8 +8,8 @@ export function Footer() {
       <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-start md:justify-between">
         <div className="max-w-md">
           <div className="flex items-center gap-2.5">
-            <LogoMark className="size-7 rounded-lg text-[17px]" />
-            <span className="font-semibold">Параграф</span>
+            <LogoMark className="size-7" />
+            <span className="font-semibold">Докрукс</span>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             Учебный проект для кейса «Онлайн-деканат». Сервис делает только предварительную
@@ -22,7 +22,7 @@ export function Footer() {
           </Link>
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new Event("paragraf:autopilot"))}
+            onClick={() => window.dispatchEvent(new Event("docrux:autopilot"))}
             className="text-left text-text-2 transition-colors hover:text-brand-text"
           >
             Показать демо (Shift+D)

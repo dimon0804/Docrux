@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 
 export type Theme = "light" | "dark";
 
-const KEY = "paragraf:theme";
+const KEY = "docrux:theme";
 
 function current(): Theme {
   return document.documentElement.dataset.theme === "dark" ? "dark" : "light";

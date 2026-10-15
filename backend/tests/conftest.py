@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from paragraf.doctypes import DocTypeRegistry
-from paragraf.pipeline import Pipeline
-from paragraf.rules.kb import RuleBook
-from paragraf.settings import Settings
+from docrux.doctypes import DocTypeRegistry
+from docrux.pipeline import Pipeline
+from docrux.rules.kb import RuleBook
+from docrux.settings import Settings
 
 ROOT = Path(__file__).resolve().parents[2]
 OPEN = ROOT / "data" / "open"

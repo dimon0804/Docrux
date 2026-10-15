@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from paragraf.models import FieldValue
-from paragraf.rules.remarks import find_remarks
+from docrux.models import FieldValue
+from docrux.rules.remarks import find_remarks
 
 TODAY = date(2026, 10, 14)
 
@@ -86,7 +86,7 @@ def test_internship_specific_remarks(registry):
 
 
 def test_remarks_do_not_change_results_json(pipeline, open_dir):
-    from paragraf.batch import run_batch
+    from docrux.batch import run_batch
 
     manifest = open_dir / "documents.json"
     results = run_batch(pipeline, manifest, open_dir / "questions.json")

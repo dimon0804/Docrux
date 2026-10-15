@@ -12,7 +12,7 @@ import re
 
 import pytest
 
-from paragraf.pipeline import Pipeline
+from docrux.pipeline import Pipeline
 
 COMPLETE = [
     "Содержит ли документ все обязательные сведения по Положению?",

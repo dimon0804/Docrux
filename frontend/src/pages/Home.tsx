@@ -121,7 +121,7 @@ function Workspace() {
               onClick={() => {
                 const name = state.file?.name ?? "document";
                 downloadJson(
-                  `${name.replace(/\.[^.]+$/, "")}.paragraf.json`,
+                  `${name.replace(/\.[^.]+$/, "")}.docrux.json`,
                   masked
                     ? resultRecord(
                         name,
@@ -162,7 +162,7 @@ function Workspace() {
           </div>
         </div>
         <p className="print-only mb-4 text-[13px] text-text-2">
-          Лист предварительной проверки сервиса «Параграф» от{" "}
+          Лист предварительной проверки сервиса «Докрукс» от{" "}
           {new Date().toLocaleDateString("ru-RU", {
             day: "numeric",
             month: "long",
@@ -254,7 +254,7 @@ function Workspace() {
       <div className="mx-auto max-w-[720px] text-center">
         <p className="rise inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-[13px] font-medium text-text-2">
           <span className="size-1.5 rounded-full bg-brand" />
-          Цифровой секретарь деканата
+          ИИ, который видит документ насквозь
         </p>
         <h1
           className="rise mt-5 text-[34px] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-[52px]"

@@ -38,15 +38,15 @@ WORKDIR /src
 COPY backend/pyproject.toml ./
 # Сначала только зависимости: этот слой не пересобирается при правке кода, и пакеты
 # не скачиваются заново. Telegram-бот запускается из того же образа.
-RUN mkdir -p src/paragraf && touch src/paragraf/__init__.py \
+RUN mkdir -p src/docrux && touch src/docrux/__init__.py \
     && pip install ".[handwriting,bot,speech]" \
-    && pip uninstall -y paragraf
+    && pip uninstall -y docrux
 COPY backend/src ./src
 RUN pip install --no-deps .
 
 
 FROM base AS runtime
-LABEL org.opencontainers.image.title="Параграф API" \
+LABEL org.opencontainers.image.title="Докрукс API" \
       org.opencontainers.image.description="Цифровой секретарь деканата" \
       org.opencontainers.image.licenses="MIT"
 RUN groupadd --system --gid 10001 app \
@@ -56,9 +56,9 @@ COPY config /app/config
 # Открытый набор организаторов для самопроверки из интерфейса (около 6 МБ).
 COPY data/open /app/data/open
 ENV PATH="/opt/venv/bin:$PATH" \
-    PARAGRAF_CONFIG_DIR=/app/config \
-    PARAGRAF_OPEN_SET_DIR=/app/data/open \
-    PARAGRAF_TESSDATA=/usr/share/tessdata_best \
+    DOCRUX_CONFIG_DIR=/app/config \
+    DOCRUX_OPEN_SET_DIR=/app/data/open \
+    DOCRUX_TESSDATA=/usr/share/tessdata_best \
     OMP_THREAD_LIMIT=1 \
     TMPDIR=/tmp
 WORKDIR /app
@@ -66,4 +66,4 @@ USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
     CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2).status == 200 else 1)"]
-CMD ["uvicorn", "paragraf.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--no-server-header", "--timeout-keep-alive", "15"]
+CMD ["uvicorn", "docrux.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--no-server-header", "--timeout-keep-alive", "15"]

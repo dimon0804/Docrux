@@ -1,4 +1,12 @@
-# Paragraf
+<img src="docs/logo.svg" width="72" alt="" align="left">
+
+# Docrux
+
+**AI that sees right through a document.**
+
+<br clear="left">
+
+The name joins *document* and *crux*: the service gets to the heart of a document and checks it against the regulations without the red tape. The mark is a spark over an open sheet.
 
 A digital secretary for a university dean's office. A student uploads a photo of a certificate or an application and asks a question. The service reads the picture, fills in a card of fields, checks the required data and answers with a reference to the exact clause of the regulations.
 
@@ -66,8 +74,8 @@ A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/d
 Docker is the only requirement.
 
 ```sh
-git clone https://github.com/dimon0804/PARAGRAF.git paragraf
-cd paragraf
+git clone https://github.com/dimon0804/Docrux.git docrux
+cd docrux
 docker compose up --build
 ```
 
@@ -86,15 +94,15 @@ A five-minute tour. It can also run on its own: Shift+D or the "Показать
 
 No Docker at hand? Open the notebook: it installs the service on a free Colab machine, checks the open set and builds `results.json` for any set in the same format.
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/PARAGRAF/blob/main/notebooks/paragraf_colab.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/Docrux/blob/main/notebooks/docrux_colab.ipynb)
 
 ## Producing results.json
 
 ```sh
 docker compose build api
 mkdir -p out
-docker run --rm -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" paragraf-api \
-  paragraf batch /data/documents.json --out /out/results.json
+docker run --rm -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" docrux-api \
+  docrux batch /data/documents.json --out /out/results.json
 
 python data/open/evaluate.py \
   --reference data/open/reference_results.json \
@@ -230,7 +238,7 @@ In PowerShell: `$env:BOT_TOKEN="123456:ABC..."; docker compose --profile bot up 
 
 The bot needs internet access to `api.telegram.org`, so it runs on a separate network rather than on the API's internal one. It keeps the card of the last document in memory for 30 minutes to answer questions and writes nothing to disk. The file itself is not kept after processing; to re-read it as another type the bot downloads it from Telegram again.
 
-Without Docker, run `paragraf bot` after `pip install -e ".[bot]"`; the token is read from `PARAGRAF_BOT_TOKEN`.
+Without Docker, run `docrux bot` after `pip install -e ".[bot]"`; the token is read from `DOCRUX_BOT_TOKEN`.
 
 ## Tools and models
 
@@ -269,7 +277,7 @@ cd backend
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 pytest
-uvicorn paragraf.api.app:app --reload
+uvicorn docrux.api.app:app --reload
 
 cd frontend
 npm install

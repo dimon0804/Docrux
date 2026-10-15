@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from paragraf.api.app import create_app
-from paragraf.pipeline import Pipeline
-from paragraf.settings import Settings
+from docrux.api.app import create_app
+from docrux.pipeline import Pipeline
+from docrux.settings import Settings
 
 
 @pytest.fixture(scope="module")
@@ -161,7 +161,7 @@ def test_check_is_rate_limited(settings: Settings, pipeline: Pipeline):
 
 
 def test_value_without_letters_or_digits_counts_as_empty(registry):
-    from paragraf.api.cards import clean_value
+    from docrux.api.cards import clean_value
 
     spec = registry.get("academic_leave_application").field("group")
     assert clean_value(spec, "???") is None
@@ -170,7 +170,7 @@ def test_value_without_letters_or_digits_counts_as_empty(registry):
 
 
 def test_surname_with_initials_keeps_its_gender(registry):
-    from paragraf.api.cards import clean_value
+    from docrux.api.cards import clean_value
 
     spec = registry.get("internship_certificate").field("supervisor_name")
     assert clean_value(spec, "Ильина Е. А.").startswith("Ильина")

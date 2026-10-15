@@ -33,7 +33,7 @@ jobs:
           ruff check src tests
           ruff format --check src tests
       - name: Tests
-        run: pytest --cov=paragraf --cov-report=term-missing
+        run: pytest --cov=docrux --cov-report=term-missing
       - name: Dependency audit
         run: pip-audit --strict --skip-editable
         continue-on-error: true
@@ -72,7 +72,7 @@ jobs:
           context: .
           file: backend/Dockerfile
           load: true
-          tags: paragraf-api:ci
+          tags: docrux-api:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Recognize 30 documents and answer 120 questions
@@ -80,8 +80,8 @@ jobs:
           mkdir -p out && chmod 777 out
           # Запуск от пользователя образа и с теми же ограничениями, что в docker-compose.
           docker run --rm --read-only --tmpfs /tmp --cap-drop ALL \
-            -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" paragraf-api:ci \
-            paragraf batch /data/documents.json --out /out/results.json
+            -v "$PWD/data/open:/data:ro" -v "$PWD/out:/out" docrux-api:ci \
+            docrux batch /data/documents.json --out /out/results.json
       - name: Compare with the reference
         run: |
           python data/open/evaluate.py \

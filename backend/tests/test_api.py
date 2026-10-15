@@ -8,10 +8,10 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from paragraf.api.app import create_app
-from paragraf.api.security import RateLimiter
-from paragraf.pipeline import Pipeline
-from paragraf.settings import Settings
+from docrux.api.app import create_app
+from docrux.api.security import RateLimiter
+from docrux.pipeline import Pipeline
+from docrux.settings import Settings
 
 
 @pytest.fixture(scope="module")
@@ -254,7 +254,7 @@ def test_pdf_with_too_many_pages_is_rejected(client: TestClient):
 
 
 def test_rate_limiter_counts_ipv6_by_network_and_keeps_limits_when_full():
-    from paragraf.api.security import RateLimiter
+    from docrux.api.security import RateLimiter
 
     limiter = RateLimiter(per_minute=1, max_clients=3)
     assert limiter.allow("2001:db8::1", now=0)[0]
@@ -269,7 +269,7 @@ def test_rate_limiter_counts_ipv6_by_network_and_keeps_limits_when_full():
 def test_huge_pdf_pages_are_rendered_within_the_pixel_budget():
     import pymupdf
 
-    from paragraf.imaging.loader import PDF_PAGE_PIXELS, UnsupportedFile, load_page
+    from docrux.imaging.loader import PDF_PAGE_PIXELS, UnsupportedFile, load_page
 
     def pdf(pages: int, width: float, height: float) -> bytes:
         document = pymupdf.open()
@@ -290,7 +290,7 @@ def test_huge_pdf_pages_are_rendered_within_the_pixel_budget():
 def test_busy_service_answers_503_instead_of_queueing(settings, pipeline, open_dir):
     from fastapi.testclient import TestClient
 
-    from paragraf.api.app import MAX_WAITING, create_app
+    from docrux.api.app import MAX_WAITING, create_app
 
     with TestClient(create_app(settings, pipeline)) as client:
         client.app.state.ocr_waiting = MAX_WAITING
@@ -362,7 +362,7 @@ def test_speech_rejects_wrong_audio_format():
     import io
     import wave
 
-    from paragraf.speech import SpeechError, SpeechRecognizer
+    from docrux.speech import SpeechError, SpeechRecognizer
 
     recognizer = SpeechRecognizer.__new__(SpeechRecognizer)
     buffer = io.BytesIO()
@@ -383,8 +383,8 @@ def test_metrics_count_documents_and_refusals(client, open_dir):
     client.post("/api/analyze", files={"file": ("a.txt", b"hello", "text/plain")})
     text = client.get("/metrics").text
     assert (
-        'paragraf_documents_total{document_type="academic_leave_application",status="missing_fields"}'
+        'docrux_documents_total{document_type="academic_leave_application",status="missing_fields"}'
         in text
     )
-    assert 'paragraf_rejected_total{reason="unsupported"}' in text
-    assert "paragraf_analyze_seconds_count" in text
+    assert 'docrux_rejected_total{reason="unsupported"}' in text
+    assert "docrux_analyze_seconds_count" in text

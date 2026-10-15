@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from paragraf import sandbox
-from paragraf.pipeline import Pipeline
+from docrux import sandbox
+from docrux.pipeline import Pipeline
 
 LEAVE = """
 id: leave_short
@@ -90,8 +90,8 @@ def test_too_many_fields_are_rejected():
 def test_sandbox_endpoint(open_dir):
     from fastapi.testclient import TestClient
 
-    from paragraf.api.app import create_app
-    from paragraf.settings import Settings
+    from docrux.api.app import create_app
+    from docrux.settings import Settings
 
     settings = Settings(
         config_dir=open_dir.parents[1] / "config",

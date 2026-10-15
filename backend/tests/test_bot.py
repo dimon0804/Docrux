@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from paragraf.bot import logic
-from paragraf.bot.logic import ChatStore
-from paragraf.models import Analysis, FieldValue, Validation
-from paragraf.pipeline import Pipeline
-from paragraf.settings import Settings
+from docrux.bot import logic
+from docrux.bot.logic import ChatStore
+from docrux.models import Analysis, FieldValue, Validation
+from docrux.pipeline import Pipeline
+from docrux.settings import Settings
 
 
 def _analysis(pipeline: Pipeline, open_dir: Path, name: str) -> Analysis:
@@ -205,8 +205,8 @@ def test_help_mentions_rules():
 
 
 def test_bot_needs_token(settings: Settings):
-    app = pytest.importorskip("paragraf.bot.app")
-    with pytest.raises(app.BotTokenMissing, match="PARAGRAF_BOT_TOKEN"):
+    app = pytest.importorskip("docrux.bot.app")
+    with pytest.raises(app.BotTokenMissing, match="DOCRUX_BOT_TOKEN"):
         asyncio.run(app.run(settings.model_copy(update={"bot_token": None})))
     broken = Settings(bot_token="not-a-token")
     with pytest.raises(app.BotTokenMissing) as error:
@@ -215,7 +215,7 @@ def test_bot_needs_token(settings: Settings):
 
 
 def test_keyboards_fit_telegram_limits(pipeline: Pipeline, open_dir: Path, settings: Settings):
-    app = pytest.importorskip("paragraf.bot.app")
+    app = pytest.importorskip("docrux.bot.app")
     store = ChatStore(ttl=60, max_chats=10)
     state = store.put(1, _analysis(pipeline, open_dir, "open-012"), "file")
     report = app.report_keyboard(state)
@@ -245,7 +245,7 @@ def test_reply_stays_within_limit_when_escaping_inflates_it(pipeline: Pipeline):
 
 
 def test_report_lists_remarks(pipeline: Pipeline, open_dir: Path):
-    from paragraf.models import Remark
+    from docrux.models import Remark
 
     analysis = pipeline.analyze((open_dir / "documents" / "open-012.pdf").read_bytes()).analysis
     analysis = analysis.model_copy(
@@ -260,6 +260,6 @@ def test_report_lists_remarks(pipeline: Pipeline, open_dir: Path):
 
 
 def test_web_app_needs_https():
-    assert logic.web_app_url("https://paragraf.example.ru") == "https://paragraf.example.ru"
+    assert logic.web_app_url("https://docrux.example.ru") == "https://docrux.example.ru"
     assert logic.web_app_url("http://localhost:8080") is None
     assert logic.web_app_url(None) is None
