@@ -478,6 +478,15 @@
   }
 }
 
+/* Разлёт карточек героя при прокрутке: --scatter от 0 до 1 задаёт HeroCards. */
+.scatter {
+  --p: var(--scatter, 0);
+  transform: translate3d(calc(var(--side) * var(--p) * 320px), calc(var(--p) * -90px), 0)
+    scale(calc(1 - var(--p) * 0.45)) rotate(calc(var(--side) * var(--p) * 10deg));
+  opacity: calc(1 - var(--p) * 1.15);
+  will-change: transform, opacity;
+}
+
 /* Появление блоков при прокрутке. */
 .reveal {
   opacity: 0;
@@ -550,6 +559,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .scatter {
+    transform: none;
+    opacity: calc(1 - var(--scatter, 0));
+  }
+
   .topo,
   .float-card,
   .doc-scan,

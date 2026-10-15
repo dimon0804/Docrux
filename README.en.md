@@ -1,10 +1,21 @@
-<img src="docs/logo.svg" width="72" alt="" align="left">
+<div align="center">
+
+<img src="docs/logo.svg" width="96" alt="Docrux mark">
 
 # Docrux
 
 **AI that sees right through a document.**
 
-<br clear="left">
+### [Open the service: docrux.clv-digital.tech](https://docrux.clv-digital.tech)
+
+[![Website](https://img.shields.io/badge/site-docrux.clv--digital.tech-2fd89e?style=for-the-badge)](https://docrux.clv-digital.tech)
+[![Telegram](https://img.shields.io/badge/Telegram-@docrux__bot-ec6fa5?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/docrux_bot)
+[![Video](https://img.shields.io/badge/video-2:54-0e1d18?style=for-the-badge)](docs/pitch/demo.mp4)
+
+[![CI](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml/badge.svg)](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml)
+![Metrics](https://img.shields.io/badge/evaluate.py-1.000%20·%201.000%20·%201.000-2fd89e)
+
+</div>
 
 The name joins *document* and *crux*: the service gets to the heart of a document and checks it against the regulations without the red tape. The mark is a scanner frame around a spark next to a document sheet: the service aims at a document and sees right through it.
 
@@ -12,11 +23,11 @@ A digital secretary for a university dean's office. A student uploads a photo of
 
 Built for the "Online Dean's Office" case by Center-invest Bank. [Русская версия](README.md)
 
-![Result: the check, answers with clause references and field highlighting](docs/screenshots/result-light.png)
+![Docrux home page](docs/screenshots/home-dark.png)
 
-| Home, dark theme | Home, light theme | Reading a document |
+| Result, light theme | Home, light theme | Reading a document |
 | --- | --- | --- |
-| ![Home page in the dark theme](docs/screenshots/home-dark.png) | ![Home page in the light theme](docs/screenshots/home-light.png) | ![Reading a document](docs/screenshots/reading.png) |
+| ![Result: the check, answers with clause references and field highlighting](docs/screenshots/result-light.png) | ![Home page in the light theme](docs/screenshots/home-light.png) | ![Reading a document](docs/screenshots/reading.png) |
 
 | Result, dark theme | Batch checking | Type sandbox |
 | --- | --- | --- |

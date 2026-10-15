@@ -1,10 +1,21 @@
-<img src="docs/logo.svg" width="72" alt="" align="left">
+<div align="center">
+
+<img src="docs/logo.svg" width="96" alt="Знак Докрукса">
 
 # Докрукс
 
 **ИИ, который видит документ насквозь.**
 
-<br clear="left">
+### [Открыть сервис: docrux.clv-digital.tech](https://docrux.clv-digital.tech)
+
+[![Сайт](https://img.shields.io/badge/сайт-docrux.clv--digital.tech-2fd89e?style=for-the-badge)](https://docrux.clv-digital.tech)
+[![Telegram](https://img.shields.io/badge/Telegram-@docrux__bot-ec6fa5?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/docrux_bot)
+[![Видео](https://img.shields.io/badge/видео-2:54-0e1d18?style=for-the-badge)](docs/pitch/demo.mp4)
+
+[![CI](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml/badge.svg)](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml)
+![Метрики](https://img.shields.io/badge/evaluate.py-1.000%20·%201.000%20·%201.000-2fd89e)
+
+</div>
 
 Название сложено из document и crux («суть», «узел»): сервис добирается до сути документа и сверяет её с Положением без лишней бюрократии. Знак — рамка сканера вокруг искры рядом с листом документа: сервис наводится на документ и видит его насквозь.
 
@@ -12,17 +23,17 @@
 
 Решение кейса «Онлайн-деканат» банка «Центр-инвест». [English version](README.en.md)
 
-![Результат разбора: проверка, ответы со ссылками на пункты и подсветка поля на снимке](docs/screenshots/result-light.png)
+![Главная страница Докрукса](docs/screenshots/home-dark.png)
 
-| Главная, тёмная тема | Главная, светлая тема | Экран чтения документа |
+| Результат в светлой теме | Главная, светлая тема | Экран чтения документа |
 | --- | --- | --- |
-| ![Главная страница в тёмной теме](docs/screenshots/home-dark.png) | ![Главная страница в светлой теме](docs/screenshots/home-light.png) | ![Экран чтения документа](docs/screenshots/reading.png) |
+| ![Результат разбора: проверка, ответы со ссылками на пункты и подсветка поля на снимке](docs/screenshots/result-light.png) | ![Главная страница в светлой теме](docs/screenshots/home-light.png) | ![Экран чтения документа](docs/screenshots/reading.png) |
 
 | Результат в тёмной теме | Пакетная проверка | Песочница типов |
 | --- | --- | --- |
 | ![Результат в тёмной теме](docs/screenshots/result-dark.png) | ![Пакетная проверка](docs/screenshots/batch.png) | ![Песочница типов документов](docs/screenshots/sandbox.png) |
 
-Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 минуты 54 секунды. Текст выступления на защите: [docs/pitch/speech.md](docs/pitch/speech.md).
+Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 минуты 54 секунды.
 
 ## Что умеет
 

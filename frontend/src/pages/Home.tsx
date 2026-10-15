@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Stamp,
 } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CheckBanner } from "@/components/CheckBanner";
@@ -400,8 +400,29 @@ const HERO_CARDS = [
 
 /** Карточки вокруг заголовка, как в макете. Только для широкого экрана. */
 function HeroCards() {
+  // При прокрутке карточки разлетаются в стороны и гаснут, как в видео дизайнеров.
+  // Доля прокрутки пишется в CSS-переменную, React при этом не перерисовывает страницу.
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const progress = Math.min(1, Math.max(0, window.scrollY / 420));
+      box.current?.style.setProperty("--scatter", progress.toFixed(3));
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+    };
+  }, []);
   return (
     <div
+      ref={box}
       aria-hidden="true"
       className="pointer-events-none absolute inset-x-0 top-0 hidden xl:block"
     >
@@ -414,28 +435,33 @@ function HeroCards() {
             style={{ "--i": index + 3 } as React.CSSProperties}
           >
             <div
-              className={`float-card flex items-center gap-3 rounded-2xl border bg-surface/85 py-2.5 pl-2.5 pr-5 shadow-pop backdrop-blur ${
-                card.accent ? "border-accent/35" : "border-brand/35"
-              }`}
-              style={{ "--d": index, "--r": card.rotate } as React.CSSProperties}
+              className="scatter"
+              style={{ "--side": card.place.includes("left") ? -1 : 1 } as React.CSSProperties}
             >
-              <span
-                className={`grid size-9 place-items-center rounded-xl border ${
-                  card.accent
-                    ? "border-accent/30 bg-accent-soft text-accent-text"
-                    : "border-brand/30 bg-brand-soft text-brand-text"
+              <div
+                className={`float-card flex items-center gap-3 rounded-2xl border bg-surface/85 py-2.5 pl-2.5 pr-5 shadow-pop backdrop-blur ${
+                  card.accent ? "border-accent/35" : "border-brand/35"
                 }`}
+                style={{ "--d": index, "--r": card.rotate } as React.CSSProperties}
               >
-                <Icon className="size-[18px]" />
-              </span>
-              <span className="text-left leading-tight">
-                <span className="block text-[14px] font-bold">{card.title}</span>
                 <span
-                  className={`mono mt-0.5 block text-[11px] ${card.accent ? "text-accent-text" : "text-brand-text"}`}
+                  className={`grid size-9 place-items-center rounded-xl border ${
+                    card.accent
+                      ? "border-accent/30 bg-accent-soft text-accent-text"
+                      : "border-brand/30 bg-brand-soft text-brand-text"
+                  }`}
                 >
-                  {card.note}
+                  <Icon className="size-[18px]" />
                 </span>
-              </span>
+                <span className="text-left leading-tight">
+                  <span className="block text-[14px] font-bold">{card.title}</span>
+                  <span
+                    className={`mono mt-0.5 block text-[11px] ${card.accent ? "text-accent-text" : "text-brand-text"}`}
+                  >
+                    {card.note}
+                  </span>
+                </span>
+              </div>
             </div>
           </div>
         );
