@@ -210,3 +210,36 @@ def test_bot_stops_on_a_rejected_token(pipeline, settings):
             await runner.cleanup()
 
     asyncio.run(scenario())
+
+
+def test_bot_waits_out_a_proxy_timeout(pipeline, settings, monkeypatch):
+    """Ошибка таймаута из aiohttp_socks не наследует OSError, но бот её тоже пережидает."""
+    aiohttp_socks = pytest.importorskip("aiohttp_socks")
+    from docrux.bot import app as bot_app
+
+    calls = 0
+
+    async def flaky_profile(bot, settings):
+        nonlocal calls
+        calls += 1
+        if calls < 3:
+            raise aiohttp_socks.ProxyTimeoutError("Proxy connection timed out: 60")
+
+    async def scenario():
+        monkeypatch.setattr(bot_app, "setup_profile", flaky_profile)
+        dispatcher = Dispatcher()
+        polled = asyncio.Event()
+
+        async def fake_polling(*args, **kwargs):
+            polled.set()
+
+        monkeypatch.setattr(dispatcher, "start_polling", fake_polling)
+        bot = Bot(TOKEN)
+        try:
+            await asyncio.wait_for(poll(bot, dispatcher, settings, first_delay=0.01), 5)
+        finally:
+            await bot.session.close()
+        return polled.is_set()
+
+    assert asyncio.run(scenario()) is True
+    assert calls == 3

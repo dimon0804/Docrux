@@ -292,15 +292,22 @@ async def run(settings: Settings) -> None:
         await bot.session.close()
 
 
-try:
-    from python_socks import ProxyException as _ProxyException
-except ImportError:  # pragma: no cover  без прокси пакета может не быть
+def _proxy_errors() -> tuple[type[BaseException], ...]:
+    """Ошибки прокси: у aiohttp_socks и python_socks свои классы, не наследники OSError."""
+    found: list[type[BaseException]] = []
+    for module in ("aiohttp_socks", "python_socks"):
+        try:
+            package = __import__(module)
+        except ImportError:  # pragma: no cover  без прокси пакетов может не быть
+            continue
+        for name in ("ProxyError", "ProxyConnectionError", "ProxyTimeoutError"):
+            error = getattr(package, name, None)
+            if isinstance(error, type) and issubclass(error, BaseException):
+                found.append(error)
+    return tuple(found)
 
-    class _ProxyException(Exception):  # type: ignore[no-redef]
-        pass
 
-
-NETWORK_ERRORS = (TelegramNetworkError, OSError, _ProxyException)
+NETWORK_ERRORS = (TelegramNetworkError, OSError, *_proxy_errors())
 """Сбои связи: Telegram или прокси недоступны. Их бот пережидает, а не падает."""
 
 
