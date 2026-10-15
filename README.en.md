@@ -10,7 +10,7 @@
 
 [![Website](https://img.shields.io/badge/site-docrux.clv--digital.tech-2fd89e?style=for-the-badge)](https://docrux.clv-digital.tech)
 [![Telegram](https://img.shields.io/badge/Telegram-@docrux__bot-ec6fa5?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/docrux_bot)
-[![Video](https://img.shields.io/badge/video-2:54-0e1d18?style=for-the-badge)](docs/pitch/demo.mp4)
+[![Video](https://img.shields.io/badge/video-2:35-0e1d18?style=for-the-badge)](docs/pitch/demo.mp4)
 
 [![CI](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml/badge.svg)](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml)
 ![Metrics](https://img.shields.io/badge/evaluate.py-1.000%20·%201.000%20·%201.000-2fd89e)
@@ -33,7 +33,7 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 | --- | --- | --- |
 | ![Result in the dark theme](docs/screenshots/result-dark.png) | ![Batch checking](docs/screenshots/batch.png) | ![Document type sandbox](docs/screenshots/sandbox.png) |
 
-A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 54 seconds.
+A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 35 seconds.
 
 ## Features
 
@@ -108,6 +108,16 @@ A five-minute tour. It can also run on its own: Shift+D or the "Показать
 No Docker at hand? Open the notebook: it installs the service on a free Colab machine, checks the open set and builds `results.json` for any set in the same format.
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/Docrux/blob/main/notebooks/docrux_colab.ipynb)
+
+## Your own server and domain
+
+This is how our service runs at <https://docrux.clv-digital.tech>. The domain must point at the server with ports 80 and 443 open. An outer Caddy in front of the site obtains a Let's Encrypt certificate by itself:
+
+```sh
+DOMAIN=docrux.example.com HTTP_PORT=127.0.0.1:8080   docker compose -f docker-compose.yml -f deploy/docker-compose.domain.yml up -d --build
+```
+
+Add the bot and monitoring with `--profile bot --profile monitoring`. To let the bot open the site inside Telegram, also pass `WEB_APP_URL=https://your-domain`.
 
 ## Producing results.json
 

@@ -1,6 +1,9 @@
 {
 	admin off
 	servers {
+		# За внешним шлюзом (deploy/docker-compose.domain.yml) адрес клиента берётся
+		# из X-Forwarded-For, но только от прокси из частной сети.
+		trusted_proxies static private_ranges
 		timeouts {
 			read_header 10s
 			read_body 30s
@@ -36,7 +39,7 @@
 			max_size 16MB
 		}
 		reverse_proxy {$API_UPSTREAM:api:8000} {
-			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-For {client_ip}
 			transport http {
 				response_header_timeout 60s
 				dial_timeout 5s

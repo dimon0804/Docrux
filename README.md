@@ -10,7 +10,7 @@
 
 [![Сайт](https://img.shields.io/badge/сайт-docrux.clv--digital.tech-2fd89e?style=for-the-badge)](https://docrux.clv-digital.tech)
 [![Telegram](https://img.shields.io/badge/Telegram-@docrux__bot-ec6fa5?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/docrux_bot)
-[![Видео](https://img.shields.io/badge/видео-2:54-0e1d18?style=for-the-badge)](docs/pitch/demo.mp4)
+[![Видео](https://img.shields.io/badge/видео-2:35-0e1d18?style=for-the-badge)](docs/pitch/demo.mp4)
 
 [![CI](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml/badge.svg)](https://github.com/dimon0804/Docrux/actions/workflows/ci.yml)
 ![Метрики](https://img.shields.io/badge/evaluate.py-1.000%20·%201.000%20·%201.000-2fd89e)
@@ -33,7 +33,7 @@
 | --- | --- | --- |
 | ![Результат в тёмной теме](docs/screenshots/result-dark.png) | ![Пакетная проверка](docs/screenshots/batch.png) | ![Песочница типов документов](docs/screenshots/sandbox.png) |
 
-Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 минуты 54 секунды.
+Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 минуты 35 секунд.
 
 ## Что умеет
 
@@ -114,6 +114,16 @@ APT_MIRROR=mirror.yandex.ru docker compose up --build
 Если Docker под рукой нет, откройте ноутбук: он ставит сервис на бесплатной машине Colab, проверяет открытый набор и собирает `results.json` для любого набора в том же формате.
 
 [![Открыть в Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dimon0804/Docrux/blob/main/notebooks/docrux_colab.ipynb)
+
+## Свой сервер и домен
+
+Так запущен наш сервис на <https://docrux.clv-digital.tech>. Домен должен указывать на сервер, порты 80 и 443 открыты. Перед сайтом встаёт внешний Caddy, который сам получает сертификат Let's Encrypt:
+
+```sh
+DOMAIN=docrux.example.ru HTTP_PORT=127.0.0.1:8080   docker compose -f docker-compose.yml -f deploy/docker-compose.domain.yml up -d --build
+```
+
+Бот и мониторинг добавляются профилями `--profile bot --profile monitoring`. Чтобы бот открывал сайт кнопкой внутри Telegram, передайте ещё `WEB_APP_URL=https://ваш-домен`.
 
 ## Как получить results.json
 

@@ -1,0 +1,5 @@
+# Внешний шлюз для своего домена: получает сертификат Let's Encrypt и передаёт запросы сайту.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:8080
+}

@@ -1,0 +1,25 @@
+# Сервис на своём домене с HTTPS. Запуск из корня репозитория:
+#   DOMAIN=docrux.example.ru HTTP_PORT=127.0.0.1:8080 \
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.domain.yml up -d --build
+# Домен должен указывать на сервер, порты 80 и 443 открыты.
+services:
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?укажите DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    networks: [public]
+
+volumes:
+  caddy_data:
+  caddy_config:
