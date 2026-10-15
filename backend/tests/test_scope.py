@@ -39,5 +39,9 @@ def test_completeness_for_a_transfer_mentions_what_the_certificate_cannot_decide
     assert answer.value == "document_ok"
     assert answer.sources == list(certificate.validation.sources)
     assert "пункт 3.5" in answer.answer
+    # Тот же вопрос без слова «курс»: пункт 3.5 нужен и здесь.
+    short = pipeline.ask(certificate, "Хватит ли этой справки для перевода?", True)
+    assert "пункт 3.5" in short.answer
+    assert short.sources == list(certificate.validation.sources)
     plain = pipeline.ask(certificate, "Достаточно ли справки?", True)
     assert "3.5" not in plain.answer
