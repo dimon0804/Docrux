@@ -129,3 +129,53 @@ def test_one_broken_file_does_not_stop_the_batch(
     assert by_id["c"]["validation"]["status"] == "missing_fields"
     assert any("ВНИМАНИЕ" in note for note in notes)
     assert _schema_errors(open_dir, result) == []
+
+
+def test_results_do_not_depend_on_file_names_or_ids(
+    results: dict, pipeline: Pipeline, open_dir: Path, tmp_path: Path
+):
+    """Сервис читает документ, а не узнаёт его по имени файла или id.
+
+    Те же файлы под случайными именами, с другими id и в обратном порядке
+    должны дать те же карточки, проверки и ответы.
+    """
+    import random
+    import shutil
+
+    manifest = json.loads((open_dir / "documents.json").read_text(encoding="utf-8"))
+    questions = json.loads((open_dir / "questions.json").read_text(encoding="utf-8"))
+    rng = random.Random(16)
+    names = rng.sample(range(1000, 10000), len(manifest))
+    renamed: dict[str, str] = {}
+    entries = []
+    (tmp_path / "scan").mkdir()
+    for entry, number in zip(reversed(manifest), names, strict=True):
+        new_id = f"anon-{number}"
+        renamed[new_id] = entry["document_id"]
+        target = tmp_path / "scan" / f"{number}.pdf"
+        shutil.copyfile(open_dir / entry["pdf"], target)
+        entries.append({"document_id": new_id, "pdf": f"scan/{number}.pdf"})
+    back = {old: new for new, old in renamed.items()}
+    asked = [
+        {
+            "question_id": f"{back[q['document_id']]}-{index}",
+            "document_id": back[q["document_id"]],
+            "question": q["question"],
+        }
+        for index, q in enumerate(questions)
+    ]
+    (tmp_path / "documents.json").write_text(json.dumps(entries, ensure_ascii=False), "utf-8")
+    (tmp_path / "questions.json").write_text(json.dumps(asked, ensure_ascii=False), "utf-8")
+
+    anonymous = run_batch(pipeline, tmp_path / "documents.json", tmp_path / "questions.json", "pdf")
+
+    def strip(answers: list[dict]) -> list[dict]:
+        return [{k: v for k, v in a.items() if k != "question_id"} for a in answers]
+
+    original = {doc["document_id"]: doc for doc in results["documents"]}
+    for doc in anonymous["documents"]:
+        before = original[renamed[doc["document_id"]]]
+        assert doc["document_type"] == before["document_type"]
+        assert doc["fields"] == before["fields"]
+        assert doc["validation"] == before["validation"]
+        assert strip(doc["answers"]) == strip(before["answers"])

@@ -501,18 +501,25 @@
   height: 3px;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   box-shadow: 0 0 18px 4px color-mix(in srgb, var(--accent) 55%, transparent);
-  animation: doc-scan 2.6s var(--ease-in-out) 2 alternate both;
+  animation: doc-scan 2.4s var(--ease-in-out) 1 forwards;
+  opacity: 0;
   pointer-events: none;
 }
 
 @keyframes doc-scan {
-  from {
+  0% {
     top: 0;
+    opacity: 0;
+  }
+  10% {
     opacity: 1;
   }
-  to {
+  85% {
+    opacity: 1;
+  }
+  100% {
     top: calc(100% - 3px);
-    opacity: 0.2;
+    opacity: 0;
   }
 }
 

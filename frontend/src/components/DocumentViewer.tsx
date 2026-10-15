@@ -33,6 +33,9 @@ export function describeFixes(quality: Record<string, number | string | boolean>
 }
 
 /** Выровненный снимок документа с рамками найденных полей. */
+// Снимки, по которым линия сканера уже прошла: при вопросах и правках она не повторяется.
+const scanned = new Set<string>();
+
 export function DocumentViewer({
   image,
   original = null,
@@ -46,6 +49,7 @@ export function DocumentViewer({
   masked = false,
 }: Props) {
   const [showOriginal, setShowOriginal] = useState(false);
+  const [scan, setScan] = useState(() => !scanned.has(image));
   // Пустое поле рисуется одной пунктирной рамкой, даже если у него есть и зона почерка.
   const empty = fields.filter((field) => !field.found && field.hint_box);
   const located = fields.filter((field) => field.box && !(!field.found && field.hint_box));
@@ -103,7 +107,16 @@ export function DocumentViewer({
             className="block size-full select-none object-contain"
             draggable={false}
           />
-          <span aria-hidden="true" className="doc-scan no-print" />
+          {scan && (
+            <span
+              aria-hidden="true"
+              className="doc-scan no-print"
+              onAnimationEnd={() => {
+                scanned.add(image);
+                setScan(false);
+              }}
+            />
+          )}
           {pageBreaks.map((position) => (
             <span
               key={position}

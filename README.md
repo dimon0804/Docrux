@@ -22,7 +22,7 @@
 | --- | --- | --- |
 | ![Результат в тёмной теме](docs/screenshots/result-dark.png) | ![Пакетная проверка](docs/screenshots/batch.png) | ![Песочница типов документов](docs/screenshots/sandbox.png) |
 
-Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 минуты 28 секунд. Текст выступления на защите: [docs/pitch/speech.md](docs/pitch/speech.md).
+Короткое видео с проходом по всем сценариям: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 минуты 54 секунды. Текст выступления на защите: [docs/pitch/speech.md](docs/pitch/speech.md).
 
 ## Что умеет
 
@@ -79,6 +79,8 @@ cd docrux
 docker compose up --build
 ```
 
+Ещё проще: на Windows дважды щёлкните `start.cmd`, на Linux и macOS выполните `sh start.sh`. Скрипт проверит, что Docker запущен, соберёт и поднимет сервис, дождётся готовности и откроет браузер.
+
 Откройте <http://localhost:8080>. Внизу карточки загрузки есть три готовых примера, по одному на каждый тип документа: «Без замечаний», «Без даты» и «Без печати».
 
 Что посмотреть за пять минут. Можно и без рук: Shift+D или ссылка «Показать демо» внизу страницы запускает автопилот, который сам проходит сценарии ниже на настоящем сервисе с подписями (Esc останавливает). То же самое по адресу <http://localhost:8080/?demo>.
@@ -133,6 +135,25 @@ python data/open/evaluate.py \
 docker run --rm -v "$PWD/data/open:/data" docrux-api \
   docrux read /data/documents/open-002.png -q "Какова дата выдачи?"
 ```
+
+## Как проверить каждое требование
+
+Каждое утверждение этого README можно проверить командой. Команды выполняются из корня репозитория.
+
+| Требование | Чем подтверждено | Команда |
+| --- | --- | --- |
+| results.json проходит `evaluate.py` организаторов, 1.000 по трём метрикам | job «OCR accuracy on the open set» в CI, страница самопроверки | раздел «Как получить results.json» выше или <http://localhost:8080/selfcheck> |
+| Формат results.json соответствует `results.schema.json` | тест `test_results_follow_the_organizers_schema` | `cd backend && pytest tests/test_open_set.py` |
+| Сервис читает документ, а не узнаёт его по имени файла или id | те же 30 документов под случайными именами, с другими id, без типа в манифесте и в обратном порядке дают те же карточки, проверки и ответы | `cd backend && pytest tests/test_open_set.py -k file_names` |
+| Тип документа определяется сам | тот же тест: в переименованном манифесте типов нет, все 30 определены верно | `cd backend && pytest tests/test_open_set.py -k file_names` |
+| Подпись и печать определяются по рисунку, а не по словам «Подпись» и «М.П.» | на открытом наборе 50 отметок из 50 (41 есть, 9 нет), ложных срабатываний нет | метрика полей в `evaluate.py` |
+| PNG и PDF одного документа дают одинаковый результат | прогон по PDF тоже даёт 1.000 | команда из «Как получить results.json» с `--source pdf` |
+| Ответы не зависят от формулировки и ничего не выдумывают | вопросы открытого набора, переписанные другими словами, и вопросы, ответа на которые нет | `cd backend && pytest tests/test_paraphrase.py tests/test_scope.py` |
+| Ответ ссылается на поле или пункт Положения | тест `test_answer_text_agrees_with_structured_value` | `cd backend && pytest tests/test_open_set.py` |
+| Плохие снимки | таблица в разделе «Качество», наборы собираются скриптом `tools/degrade.py` | `python tools/degrade.py --help` (нужны пакеты из `backend`: `pip install -e backend`) |
+| Весь стек поднимается одной командой, API закрыт снаружи, контейнеры без root | job «Full stack through docker compose» в CI | `docker compose up -d --build --wait` |
+
+Полная сверка с презентацией кейса по пунктам: [docs/requirements.md](docs/requirements.md).
 
 ## Качество
 
@@ -356,6 +377,18 @@ docs/pitch/       текст презентации и сценарий демо
 notebooks/        ноутбук для Google Colab
 docs/case/        презентация кейса
 ```
+
+## Частые проблемы
+
+| Что случилось | Что сделать |
+| --- | --- |
+| `start.cmd` пишет, что Docker не запущен | Запустите Docker Desktop, дождитесь статуса Engine running и запустите `start.cmd` ещё раз |
+| Порт 8080 занят | Задайте другой: `HTTP_PORT=8090 docker compose up --build` (в PowerShell `$env:HTTP_PORT="8090"`), сайт откроется на этом порту |
+| Сборка долго качает пакеты Debian | Укажите зеркало: `APT_MIRROR=mirror.yandex.ru docker compose up --build` |
+| `docker run ... docrux batch` не может записать файл | Дайте папке права на запись: `chmod 777 out`, контейнер работает не от root |
+| Страница открылась, но разбор не идёт | Подождите, пока контейнер `api` станет `healthy` (`docker compose ps`), первый запуск занимает до минуты |
+| Нет кнопки микрофона | Модель голоса не скачана: `python tools/fetch_models.py speech`, затем `docker compose up -d` |
+| Бот не отвечает | Посмотрите `docker compose logs bot`. Если там `bot_network_retry`, сервер не достаёт до Telegram, укажите прокси в `BOT_PROXY` |
 
 ## Ограничения
 

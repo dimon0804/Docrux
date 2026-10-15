@@ -22,7 +22,7 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 | --- | --- | --- |
 | ![Result in the dark theme](docs/screenshots/result-dark.png) | ![Batch checking](docs/screenshots/batch.png) | ![Document type sandbox](docs/screenshots/sandbox.png) |
 
-A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 28 seconds.
+A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 54 seconds.
 
 ## Features
 
@@ -79,7 +79,9 @@ cd docrux
 docker compose up --build
 ```
 
-Open <http://localhost:8080>. The home page offers three sample documents, one per type.
+Even simpler: on Windows double-click `start.cmd`, on Linux and macOS run `sh start.sh`. The script checks that Docker is running, builds and starts the service, waits until it is ready and opens the browser.
+
+Open <http://localhost:8080>. Under the upload card there are three sample documents, one per type: «Без замечаний», «Без даты» and «Без печати».
 
 A five-minute tour. It can also run on its own: Shift+D or the "Показать демо" link at the bottom of the page starts an autopilot that walks through the steps below on the live service with captions (Esc stops it). The same at <http://localhost:8080/?demo>.
 
