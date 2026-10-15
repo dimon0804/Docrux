@@ -6,6 +6,7 @@ import { Autopilot } from "./components/Autopilot";
 import { CookieNotice } from "./components/CookieNotice";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
+import { useReveal } from "./lib/reveal";
 import { useTheme } from "./lib/theme";
 import { Batch } from "./pages/Batch";
 import { Cookies } from "./pages/Cookies";
@@ -25,8 +26,10 @@ function ScrollToTop() {
 
 export function App() {
   const { theme, toggle } = useTheme();
+  useReveal();
   return (
     <div className="flex min-h-dvh flex-col">
+      <div className="topo" aria-hidden="true" />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:px-4 focus:py-2 focus:shadow-pop"
@@ -57,7 +60,7 @@ export function App() {
             background: "var(--surface)",
             color: "var(--text)",
             border: "1px solid var(--line)",
-            borderRadius: 14,
+            borderRadius: 16,
             fontFamily: "inherit",
           },
         }}

@@ -34,7 +34,7 @@ export function RuleChecklist({ documentType, fields, onSelect }: Props) {
     <section aria-labelledby="checklist-title" className="card overflow-hidden">
       <div className="flex items-baseline justify-between gap-3 px-5 pb-3 pt-4">
         <div>
-          <h2 id="checklist-title" className="text-[15px] font-semibold">
+          <h2 id="checklist-title" className="section-title">
             Сверка с Положением
           </h2>
           <p className="mt-0.5 text-[13px] text-muted">

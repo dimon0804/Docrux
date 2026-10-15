@@ -100,7 +100,7 @@ function EditRow({
             onChange={(event) => setDraft(event.target.value.slice(0, 300))}
             placeholder={PLACEHOLDER[field.type] ?? PLACEHOLDER.text}
             autoComplete="off"
-            className="h-10 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] outline-none focus:border-brand focus:shadow-[0_0_0_4px_rgb(80_184_72/0.16)]"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-3.5 text-[15px] outline-none focus:border-brand focus:shadow-[0_0_0_4px_rgb(47_216_158/0.16)]"
           />
         )}
         <button
@@ -214,7 +214,7 @@ export function FieldCard({
     <section aria-labelledby="card-title" className="card overflow-hidden">
       <header className="flex items-baseline justify-between gap-3 px-5 pb-3 pt-5">
         <div>
-          <h2 id="card-title" className="text-[17px] font-semibold tracking-[-0.01em]">
+          <h2 id="card-title" className="section-title">
             {title ?? (analysis.supported ? "Карточка документа" : "Что удалось прочитать")}
           </h2>
           <p className="mt-0.5 text-[13px] text-muted">

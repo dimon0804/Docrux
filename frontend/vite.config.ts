@@ -14,7 +14,12 @@ export default defineConfig(({ mode }) => {
         "/api": { target: env.DOCRUX_API ?? "http://localhost:8000", changeOrigin: true },
       },
     },
-    build: { target: "es2022", sourcemap: false },
+    build: {
+      target: "es2022",
+      sourcemap: false,
+      // Шрифты только отдельными файлами: CSP разрешает их лишь с нашего адреса (font-src 'self').
+      assetsInlineLimit: (file: string) => (/\.woff2?$/.test(file) ? false : undefined),
+    },
     test: {
       environment: "jsdom",
       globals: true,

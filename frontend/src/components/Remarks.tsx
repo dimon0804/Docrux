@@ -17,7 +17,7 @@ export function Remarks({ remarks, onSelect }: Props) {
           <Eye aria-hidden="true" className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 id="remarks-title" className="text-[15px] font-semibold">
+          <h2 id="remarks-title" className="section-title">
             На что обратить внимание
           </h2>
           <p className="mt-0.5 text-[13px] text-muted">

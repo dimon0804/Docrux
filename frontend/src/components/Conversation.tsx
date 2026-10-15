@@ -61,7 +61,7 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect, masked 
 
   return (
     <section aria-labelledby="ask-title" className="card p-5">
-      <h2 id="ask-title" className="text-[17px] font-semibold tracking-[-0.01em]">
+      <h2 id="ask-title" className="section-title">
         Вопрос по документу
       </h2>
       <p className="mt-0.5 text-[13px] text-muted">
@@ -72,7 +72,7 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect, masked 
         <ol className="mt-4 flex flex-col gap-4" aria-live="polite">
           {turns.map((turn) => (
             <li key={turn.id} className="rise flex flex-col gap-2">
-              <p className="self-end rounded-2xl rounded-br-md bg-surface-2 px-4 py-2.5 text-[15px] leading-relaxed">
+              <p className="btn-accent self-end rounded-2xl rounded-br-md px-4 py-2.5 text-[15px] font-semibold leading-relaxed">
                 {turn.question}
               </p>
               {turn.error ? (
@@ -168,7 +168,7 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect, masked 
           autoComplete="off"
           maxLength={MAX_LENGTH}
           enterKeyHint="send"
-          className="h-12 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-4 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-muted focus:border-brand focus:shadow-[0_0_0_4px_rgb(80_184_72/0.16)]"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-4 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-muted focus:border-brand focus:shadow-[0_0_0_4px_rgb(47_216_158/0.16)]"
         />
         <VoiceButton
           disabled={asking}
@@ -181,7 +181,7 @@ export function Conversation({ analysis, turns, asking, onAsk, onSelect, masked 
           type="submit"
           disabled={!draft.trim() || asking}
           aria-label="Отправить вопрос"
-          className="pressable grid size-12 shrink-0 place-items-center rounded-xl bg-brand-strong text-on-brand hover:bg-brand-hover disabled:bg-surface-3 disabled:text-muted"
+          className="btn-accent pressable grid size-12 shrink-0 place-items-center rounded-2xl disabled:bg-none disabled:bg-surface-3 disabled:text-muted disabled:shadow-none"
         >
           <ArrowUp aria-hidden="true" className="size-5" strokeWidth={2.5} />
         </button>

@@ -311,7 +311,7 @@ export function Batch() {
       {items.length > 0 && (
         <div className="card mt-5 overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-3">
-            <h2 className="text-[15px] font-semibold">Документы</h2>
+            <h2 className="section-title">Документы</h2>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -379,7 +379,7 @@ function Students({ items }: { items: Item[] }) {
   return (
     <section aria-labelledby="students-title" className="card mt-5 overflow-hidden">
       <div className="border-b border-line px-5 py-3">
-        <h2 id="students-title" className="text-[15px] font-semibold">
+        <h2 id="students-title" className="section-title">
           Студенты в пакете
         </h2>
         <p className="mt-0.5 text-[13px] text-muted">

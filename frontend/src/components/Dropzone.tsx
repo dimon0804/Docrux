@@ -1,4 +1,4 @@
-import { Camera, FileText, ImageUp, RefreshCw } from "lucide-react";
+import { ArrowUpFromLine, Camera, FileText, RefreshCw } from "lucide-react";
 import { type DragEvent, useEffect, useId, useRef, useState } from "react";
 
 type Props = {
@@ -75,10 +75,10 @@ export function Dropzone({
         if (depth.current <= 0) setOver(false);
       }}
       onDrop={onDrop}
-      className={`relative rounded-2xl border-2 border-dashed transition-[border-color,background-color] duration-200 ${
+      className={`relative rounded-[22px] border border-dashed transition-[border-color,background-color,box-shadow] duration-200 ${
         over
-          ? "border-brand bg-brand-softer"
-          : "border-line-strong bg-surface-2/60 hover:border-brand/60"
+          ? "border-accent bg-accent-soft shadow-[0_0_0_4px_var(--accent-soft)]"
+          : "border-line-strong bg-surface-2/50 hover:border-brand/60"
       }`}
     >
       <input
@@ -110,7 +110,7 @@ export function Dropzone({
       />
       {file ? (
         <div className="flex items-center gap-4 p-4">
-          <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-line bg-white">
             {preview ? (
               <img src={preview} alt="" className="size-full object-cover object-top" />
             ) : (
@@ -118,10 +118,10 @@ export function Dropzone({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium" title={file.name}>
+            <p className="truncate text-[15px] font-semibold" title={file.name}>
               {file.name}
             </p>
-            <p className="mt-0.5 text-[13px] text-muted">
+            <p className="mono mt-1 text-[12px] text-brand-text">
               {extraPages > 0
                 ? `и ещё ${extraPages} ${extraPages === 1 ? "страница" : extraPages < 5 ? "страницы" : "страниц"}`
                 : size(file.size)}
@@ -129,49 +129,53 @@ export function Dropzone({
           </div>
           <label
             htmlFor={inputId}
-            className="pressable inline-flex shrink-0 items-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2 text-sm font-medium text-text-2 hover:border-line-strong hover:text-text"
+            className="pressable inline-flex shrink-0 items-center gap-2 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-sm font-semibold text-text-2 hover:border-brand hover:text-text"
           >
             <RefreshCw aria-hidden="true" className="size-4" />
             <span className="hidden sm:inline">Заменить</span>
           </label>
         </div>
       ) : (
-        <label
-          htmlFor={inputId}
-          className="flex flex-col items-center gap-3 px-6 py-10 text-center sm:py-12"
-        >
-          <span
-            className={`grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand-text transition-transform duration-200 ease-out-strong ${
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4 sm:p-5">
+          <label
+            htmlFor={inputId}
+            className={`grid size-14 shrink-0 place-items-center rounded-2xl border border-line-strong bg-gradient-to-b from-surface-3 to-surface text-brand shadow-card transition-transform duration-200 ease-out-strong ${
               over ? "-translate-y-1 scale-105" : ""
             }`}
           >
-            <ImageUp aria-hidden="true" className="size-6" />
-          </span>
-          <span>
-            <span className="block text-[15px] font-semibold">Перетащите фото документа сюда</span>
-            <span className="mt-1 block text-sm text-muted">
-              или <span className="font-medium text-brand-text">выберите файл</span>. JPG, PNG или
-              PDF до 15 МБ
+            <ArrowUpFromLine aria-hidden="true" className="size-6" />
+            <span className="sr-only">Выбрать файл</span>
+          </label>
+          <div className="min-w-[200px] flex-1">
+            <p className="text-[18px] font-bold leading-tight">Загрузить скан на проверку</p>
+            <p className="mt-1 text-[13px] leading-snug text-muted">
+              Перетащите файл, сделайте снимок или вставьте из буфера. JPG, PNG или PDF до 15 МБ
+              {multiple ? ", несколько фото читаются как страницы одного документа" : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="coarse-hide mono rounded-full border border-accent/40 bg-accent-soft px-3 py-1.5 text-[12px] font-semibold text-accent-text">
+              Ctrl + V
             </span>
-            {multiple && (
-              <span className="mt-1 block text-[13px] text-muted">
-                Несколько фото читаются как страницы одного документа
+            <label
+              htmlFor={cameraId}
+              title="Сфотографировать документ"
+              className="pressable grid size-12 place-items-center rounded-2xl border border-line-strong bg-surface text-brand hover:border-brand"
+            >
+              <Camera aria-hidden="true" className="size-5" />
+              <span className="sr-only">Сфотографировать документ</span>
+            </label>
+            <label
+              htmlFor={inputId}
+              className="btn-mint pressable flex h-12 flex-col items-center justify-center rounded-2xl px-6 text-[15px] font-black uppercase leading-none tracking-[0.04em]"
+            >
+              Выбрать
+              <span className="mt-0.5 text-[10px] font-bold tracking-[0.12em] opacity-75">
+                файл
               </span>
-            )}
-            <span className="coarse-hide mt-1 text-[13px] text-muted">
-              Можно вставить снимок из буфера: Ctrl+V
-            </span>
-          </span>
-        </label>
-      )}
-      {!file && (
-        <label
-          htmlFor={cameraId}
-          className="coarse-only pressable mx-4 mb-4 items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm font-semibold text-text hover:border-line-strong"
-        >
-          <Camera aria-hidden="true" className="size-4 text-brand-text" />
-          Сфотографировать документ
-        </label>
+            </label>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -82,7 +82,7 @@ export function Autopilot() {
         {caption && (
           <p
             role="status"
-            className="max-w-[1000px] rounded-2xl bg-[#1b1f2a]/95 px-6 py-3.5 text-center text-[17px] font-medium leading-snug text-white shadow-[0_12px_40px_rgb(0_0_0/0.3)] sm:text-xl"
+            className="max-w-[1000px] rounded-2xl border border-accent/40 bg-[#08201a]/95 px-6 py-3.5 text-center text-[17px] font-medium leading-snug text-white shadow-[0_12px_40px_rgb(0_0_0/0.3)] sm:text-xl"
           >
             {caption}
           </p>

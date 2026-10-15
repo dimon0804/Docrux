@@ -32,9 +32,12 @@ export function Quality() {
   return (
     <section
       id="quality"
-      className="mx-auto max-w-[1240px] scroll-mt-24 px-4 pt-20 sm:px-6 sm:pt-28"
+      className="mx-auto max-w-[1240px] scroll-mt-28 px-4 pt-20 sm:px-6 sm:pt-28"
     >
-      <h2 className="text-[26px] font-semibold tracking-[-0.02em] sm:text-[34px]">
+      <p className="inline-flex rounded-full border border-accent/35 bg-accent-soft text-accent-text px-4 py-1 text-[13px] font-semibold">
+        Качество
+      </p>
+      <h2 className="mt-4 text-[30px] font-extrabold sm:text-[44px]">
         Проверено на сотнях документов
       </h2>
       <p className="mt-2 max-w-[600px] text-[17px] leading-relaxed text-text-2">

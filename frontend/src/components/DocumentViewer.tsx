@@ -54,7 +54,7 @@ export function DocumentViewer({
   const raw = showOriginal && original && !masked;
   const hidden = masked ? fields.filter((field) => field.box && isPersonal(field)) : [];
   return (
-    <figure className="card overflow-hidden p-2 sm:p-3">
+    <figure className="overflow-hidden rounded-[30px] border border-line-strong bg-surface-2/90 p-2.5 shadow-pop sm:p-3.5">
       {original && !masked && (
         <div
           role="group"
@@ -92,7 +92,7 @@ export function DocumentViewer({
         </div>
       ) : (
         <div
-          className="relative overflow-hidden rounded-xl bg-white"
+          className="relative overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_-12px_rgb(0_0_0/0.35)]"
           style={{
             aspectRatio: width && height ? `${width} / ${height}` : undefined,
           }}
@@ -103,6 +103,7 @@ export function DocumentViewer({
             className="block size-full select-none object-contain"
             draggable={false}
           />
+          <span aria-hidden="true" className="doc-scan no-print" />
           {pageBreaks.map((position) => (
             <span
               key={position}
@@ -125,8 +126,8 @@ export function DocumentViewer({
                 title={field.label}
                 className={`absolute rounded-md transition-[background-color,box-shadow,opacity] duration-200 ease-out ${
                   active
-                    ? "z-10 bg-brand/20 shadow-[0_0_0_2px_var(--brand),0_0_0_6px_rgb(80_184_72/0.22)]"
-                    : "bg-transparent opacity-0 shadow-[0_0_0_1.5px_rgb(80_184_72/0.55)] hover:bg-brand/10 hover:opacity-100 focus-visible:opacity-100"
+                    ? "z-10 bg-brand/20 shadow-[0_0_0_2px_var(--brand),0_0_0_6px_rgb(47_216_158/0.22)]"
+                    : "bg-transparent opacity-0 shadow-[0_0_0_1.5px_rgb(47_216_158/0.55)] hover:bg-brand/10 hover:opacity-100 focus-visible:opacity-100"
                 }`}
                 style={{
                   left: percent(Math.max(0, box.x - pad)),

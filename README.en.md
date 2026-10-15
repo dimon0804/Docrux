@@ -6,7 +6,7 @@
 
 <br clear="left">
 
-The name joins *document* and *crux*: the service gets to the heart of a document and checks it against the regulations without the red tape. The mark is a spark over an open sheet.
+The name joins *document* and *crux*: the service gets to the heart of a document and checks it against the regulations without the red tape. The mark is a scanner frame around a spark next to a document sheet: the service aims at a document and sees right through it.
 
 A digital secretary for a university dean's office. A student uploads a photo of a certificate or an application and asks a question. The service reads the picture, fills in a card of fields, checks the required data and answers with a reference to the exact clause of the regulations.
 
@@ -14,13 +14,13 @@ Built for the "Online Dean's Office" case by Center-invest Bank. [Русская
 
 ![Result: the check, answers with clause references and field highlighting](docs/screenshots/result-light.png)
 
-| Home page | Reading a document | Dark theme |
+| Home, dark theme | Home, light theme | Reading a document |
 | --- | --- | --- |
-| ![Home page](docs/screenshots/home-light.png) | ![Reading a document](docs/screenshots/reading.png) | ![Dark theme](docs/screenshots/result-dark.png) |
+| ![Home page in the dark theme](docs/screenshots/home-dark.png) | ![Home page in the light theme](docs/screenshots/home-light.png) | ![Reading a document](docs/screenshots/reading.png) |
 
-| Batch checking | Type sandbox |
-| --- | --- |
-| ![Batch checking](docs/screenshots/batch.png) | ![Document type sandbox](docs/screenshots/sandbox.png) |
+| Result, dark theme | Batch checking | Type sandbox |
+| --- | --- | --- |
+| ![Result in the dark theme](docs/screenshots/result-dark.png) | ![Batch checking](docs/screenshots/batch.png) | ![Document type sandbox](docs/screenshots/sandbox.png) |
 
 A short video walking through every scenario: [docs/pitch/demo.mp4](docs/pitch/demo.mp4), 2 minutes 28 seconds.
 
@@ -248,7 +248,7 @@ Without Docker, run `docrux bot` after `pip install -e ".[bot]"`; the token is r
 
 No external OCR or language model APIs are used. Everything runs on the CPU of an ordinary laptop.
 
-The word loader comes from the open [Uiverse.io](https://uiverse.io) collection (by kennyotsu, MIT) and was adapted to the service. Interface colors are built on the brand green of Center-invest Bank.
+The word loader comes from the open [Uiverse.io](https://uiverse.io) collection (by kennyotsu, MIT) and was adapted to the service. The look follows our team designers' mockup: dark green and light mint themes, mint and pink accents, a topographic background.
 
 | Purpose | Tool |
 | --- | --- |
@@ -261,7 +261,7 @@ The word loader comes from the open [Uiverse.io](https://uiverse.io) collection 
 | Handwriting (optional) | TrOCR `trocr-base-handwritten-ru` in ONNX, ONNX Runtime |
 | HTTP API | FastAPI, Uvicorn, Pydantic |
 | Telegram bot (optional) | aiogram |
-| Interface | React, TypeScript, Vite, Tailwind CSS, Base UI, Motion, Sonner, Lucide |
+| Interface | React, TypeScript, Vite, Tailwind CSS, Base UI, Motion, Sonner, Lucide, Exo 2 and JetBrains Mono fonts |
 | Gateway | Caddy |
 | Code checks | pytest, Ruff, Vitest, ESLint |
 

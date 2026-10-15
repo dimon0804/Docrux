@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheck, FileQuestion } from "lucide-react";
+import { Check, CircleAlert, FileQuestion } from "lucide-react";
 
 import type { Answer, FieldValue } from "@/lib/api";
 
@@ -19,7 +19,7 @@ export function CheckBanner({ check, fields, supported = true, title, onSelect }
     return (
       <section
         aria-label="Результат предварительной проверки"
-        className="rounded-[20px] border border-line bg-surface-2 p-5"
+        className="rounded-[28px] border border-line-strong bg-surface-2 p-5 sm:p-6"
       >
         <div className="flex items-start gap-3.5">
           <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-surface-3 text-text-2">
@@ -46,24 +46,28 @@ export function CheckBanner({ check, fields, supported = true, title, onSelect }
   return (
     <section
       aria-label="Результат предварительной проверки"
-      className={`rounded-[20px] border p-5 ${
-        ok ? "border-brand/30 bg-brand-softer" : "border-warn-line bg-warn-soft"
+      className={`rounded-[28px] border p-5 shadow-pop sm:p-6 ${
+        ok
+          ? "border-brand/35 bg-gradient-to-br from-brand-soft/70 to-surface/80"
+          : "border-warn-line bg-gradient-to-br from-warn-soft to-surface/80"
       }`}
     >
       <div className="flex items-start gap-3.5">
         <span
-          className={`mt-0.5 grid size-9 shrink-0 place-items-center rounded-full ${
-            ok ? "bg-brand text-white" : "bg-warn text-white dark:text-[#1a1304]"
+          className={`grid size-12 shrink-0 place-items-center rounded-2xl border shadow-card ${
+            ok
+              ? "border-brand/40 bg-gradient-to-b from-brand-soft to-surface text-brand-text"
+              : "border-warn-line bg-gradient-to-b from-warn-soft to-surface text-warn"
           }`}
         >
           {ok ? (
-            <CircleCheck aria-hidden="true" className="size-5" />
+            <Check aria-hidden="true" className="size-6" strokeWidth={2.5} />
           ) : (
-            <CircleAlert aria-hidden="true" className="size-5" />
+            <CircleAlert aria-hidden="true" className="size-6" />
           )}
         </span>
         <div className="min-w-0">
-          <h2 className="text-[17px] font-semibold leading-snug tracking-[-0.01em]">
+          <h2 className="pt-0.5 text-[19px] font-bold leading-snug">
             {ok ? "Все обязательные сведения на месте" : "В документе кое-чего не хватает"}
           </h2>
           {!ok && (

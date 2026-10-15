@@ -70,8 +70,11 @@ export function RulesSection() {
   }
 
   return (
-    <section id="rules" className="mx-auto max-w-[1240px] scroll-mt-24 px-4 pt-20 sm:px-6 sm:pt-28">
-      <h2 className="text-[26px] font-semibold tracking-[-0.02em] sm:text-[34px]">Положение</h2>
+    <section id="rules" className="mx-auto max-w-[1240px] scroll-mt-28 px-4 pt-20 sm:px-6 sm:pt-28">
+      <p className="inline-flex rounded-full border border-brand/35 bg-brand-soft text-brand-text px-4 py-1 text-[13px] font-semibold">
+        База положений
+      </p>
+      <h2 className="mt-4 text-[30px] font-extrabold sm:text-[44px]">Положение</h2>
       <p className="mt-2 max-w-[560px] text-[17px] leading-relaxed text-text-2">
         Единственный источник правил. Сервис ссылается на эти пункты и не добавляет ничего от себя.
       </p>
@@ -90,7 +93,7 @@ export function RulesSection() {
           onChange={(event) => setQuery(event.target.value.slice(0, 80))}
           placeholder="Найти в Положении: печать, отпуск, 3.4"
           autoComplete="off"
-          className="h-11 w-full rounded-xl border border-line-strong bg-surface pl-11 pr-4 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-muted focus:border-brand focus:shadow-[0_0_0_4px_rgb(80_184_72/0.16)]"
+          className="h-11 w-full rounded-xl border border-line-strong bg-surface pl-11 pr-4 text-[15px] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-muted focus:border-brand focus:shadow-[0_0_0_4px_rgb(47_216_158/0.16)]"
         />
       </div>
       {words.length > 0 && (

@@ -20,13 +20,14 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section id="how" className="mx-auto max-w-[1240px] scroll-mt-24 px-4 pt-20 sm:px-6 sm:pt-28">
-      <h2 className="text-[26px] font-semibold tracking-[-0.02em] sm:text-[34px]">
-        Три шага в одном проходе
-      </h2>
+    <section id="how" className="mx-auto max-w-[1240px] scroll-mt-28 px-4 pt-20 sm:px-6 sm:pt-28">
+      <p className="inline-flex rounded-full border border-brand/35 bg-brand-soft text-brand-text px-4 py-1 text-[13px] font-semibold">
+        Как это работает
+      </p>
+      <h2 className="mt-4 text-[30px] font-extrabold sm:text-[44px]">Три шага в одном проходе</h2>
       <p className="mt-2 max-w-[560px] text-[17px] leading-relaxed text-text-2">
-        От фотографии до ответа проходит несколько секунд. Все вычисления идут на сервере
-        сервиса, без обращений к внешним нейросетям.
+        От фотографии до ответа проходит несколько секунд. Все вычисления идут на сервере сервиса,
+        без обращений к внешним нейросетям.
       </p>
       <ol className="mt-8 grid gap-4 md:grid-cols-3">
         {STEPS.map((step, index) => (
